@@ -481,14 +481,14 @@ const Settings = () => {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
       >
-        <div className="flex items-center justify-between">
+        <div className="flex  items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Settings</h1>
             <p className="text-gray-600 mt-1">Manage your account settings and preferences</p>
           </div>
           <button
             onClick={() => navigate('/dashboard')}
-            className="flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors duration-200"
+            className="flex md:hidden items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors duration-200"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back to Dashboard
@@ -695,7 +695,7 @@ const Settings = () => {
                         <input
                               name="name"
                           type="text"
-                          className="form-input"
+                          className="input-field p-2"
                               value={editData.name}
                               onChange={handleEditChange}
                             />
@@ -713,7 +713,7 @@ const Settings = () => {
                         <input
                               name="phone"
                           type="tel"
-                          className="form-input"
+                          className="input-field p-2"
                               value={editData.phone}
                               onChange={handleEditChange}
                           placeholder="Enter your phone number"
@@ -793,7 +793,7 @@ const Settings = () => {
                         <input
                               name="firstName"
                               type="text"
-                          className="form-input"
+                          className="input-field p-2"
                               value={editData.firstName}
                               onChange={handleEditChange}
                               placeholder="Enter your first name"
@@ -812,7 +812,7 @@ const Settings = () => {
                         <input
                               name="lastName"
                           type="text"
-                              className="form-input"
+                              className="input-field p-2"
                               value={editData.lastName}
                               onChange={handleEditChange}
                               placeholder="Enter your last name"
@@ -831,7 +831,7 @@ const Settings = () => {
                             <input
                               name="dateOfBirth"
                               type="date"
-                              className="form-input"
+                              className="input-field p-2"
                               value={editData.dateOfBirth}
                               onChange={handleEditChange}
                             />
@@ -849,7 +849,7 @@ const Settings = () => {
                             <input
                               name="occupation"
                               type="text"
-                              className="form-input"
+                              className="input-field p-2"
                               value={editData.occupation}
                               onChange={handleEditChange}
                               placeholder="Enter your occupation"
@@ -868,7 +868,7 @@ const Settings = () => {
                             <input
                               name="annualIncome"
                               type="number"
-                              className="form-input"
+                              className="input-field p-2"
                               value={editData.annualIncome}
                               onChange={handleEditChange}
                               placeholder="Enter your annual income"
@@ -888,7 +888,7 @@ const Settings = () => {
                             <input
                               name="address"
                               type="text"
-                              className="form-input"
+                              className="input-field p-2"
                               value={editData.address}
                               onChange={handleEditChange}
                               placeholder="Enter your address"
@@ -907,7 +907,7 @@ const Settings = () => {
                             <input
                               name="city"
                               type="text"
-                              className="form-input"
+                              className="input-field p-2"
                               value={editData.city}
                               onChange={handleEditChange}
                               placeholder="Enter your city"
@@ -926,7 +926,7 @@ const Settings = () => {
                             <input
                               name="state"
                               type="text"
-                              className="form-input"
+                              className="input-field p-2"
                               value={editData.state}
                               onChange={handleEditChange}
                               placeholder="Enter your state"
@@ -945,7 +945,7 @@ const Settings = () => {
                         <input
                               name="zipCode"
                           type="text"
-                              className="form-input"
+                              className="input-field p-2"
                               value={editData.zipCode}
                               onChange={handleEditChange}
                               placeholder="Enter your ZIP code"
@@ -963,7 +963,7 @@ const Settings = () => {
                           {isEditing ? (
                             <select
                               name="country"
-                              className="form-input"
+                              className="input-field p-2"
                               value={editData.country}
                               onChange={handleEditChange}
                             >
@@ -1048,7 +1048,7 @@ const Settings = () => {
                           {isEditing ? (
                             <select
                               name="idType"
-                              className="form-input"
+                              className="input-field p-2"
                               value={editData.idType}
                               onChange={handleEditChange}
                             >

@@ -30,6 +30,14 @@
     @apply border-primary-500 ring-primary-500;
   }
   
+  .dark .input-field {
+    @apply bg-gray-700 text-gray-100 placeholder:text-gray-400;
+  }
+  
+  .dark .input-field:focus {
+    @apply bg-gray-600 border-primary-500 ring-primary-500;
+  }
+  
   .dark .text-gray-900 {
     @apply text-gray-100;
   }
@@ -86,6 +94,14 @@
   
   .form-input {
     @apply block w-full rounded-lg border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm transition-colors duration-200;
+  }
+  
+  .input-field {
+    @apply border-0 bg-gray-50 text-base box-border w-full text-sm leading-none h-12 outline-0 placeholder:font-normal placeholder:text-gray-400 px-3 py-2 rounded-lg transition-colors duration-200;
+  }
+  
+  .input-field:focus {
+    @apply bg-white border border-primary-500 ring-1 ring-primary-500;
   }
   
   .form-label {

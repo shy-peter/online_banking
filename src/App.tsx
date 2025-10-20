@@ -31,7 +31,7 @@ const App: React.FC = () => {
 
   return (
     <Router>
-      <div className="App">
+      <div className="App px-2 md:px-4">
         <Toaster
           position="top-right"
           toastOptions={{

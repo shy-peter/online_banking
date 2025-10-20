@@ -16,7 +16,9 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { formatCurrency } from '../lib/appwrite';
+import { canMakeWithdrawal, checkProfileCompletion } from '../lib/verification';
 import PaymentMethodSelector from './PaymentMethodSelector';
+import VerificationBadge from './VerificationBadge';
 import type { InvestmentPlan, PaymentMethodType } from '../types/appwrite';
 
 interface WithdrawalModalProps {
@@ -62,6 +64,10 @@ const WithdrawalModal: React.FC<WithdrawalModalProps> = ({ isOpen, onClose, onAd
     .reduce((sum, t) => sum + t.amount, 0);
   
   const availableBalance = totalEarnings - totalWithdrawals;
+
+  // Check if user can make withdrawals
+  const canWithdraw = canMakeWithdrawal(userProfile);
+  const profileCompletion = checkProfileCompletion(userProfile);
 
   // Get verified payment methods for withdrawal
   const verifiedPaymentMethods = paymentMethods.filter(method => method.status === 'verified');
@@ -253,6 +259,49 @@ const WithdrawalModal: React.FC<WithdrawalModalProps> = ({ isOpen, onClose, onAd
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
+          {/* Verification Warning */}
+          {!canWithdraw && (
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+              <div className="flex items-start space-x-3">
+                <AlertCircle className="w-5 h-5 text-yellow-600 mt-0.5" />
+                <div className="flex-1">
+                  <h3 className="text-sm font-semibold text-yellow-800 mb-2">
+                    Profile Verification Required
+                  </h3>
+                  <p className="text-sm text-yellow-700 mb-3">
+                    You need to complete your profile verification before making withdrawals.
+                  </p>
+                  <div className="flex items-center space-x-2">
+                    <VerificationBadge 
+                      status={profileCompletion.isComplete ? 'pending' : 'incomplete'} 
+                      size="sm" 
+                    />
+                    <span className="text-xs text-yellow-600">
+                      {profileCompletion.completionPercentage}% complete
+                    </span>
+                  </div>
+                  {!profileCompletion.isComplete && (
+                    <div className="mt-3">
+                      <p className="text-xs text-yellow-700 mb-2">Missing fields:</p>
+                      <div className="flex flex-wrap gap-1">
+                        {profileCompletion.missingFields.slice(0, 5).map((field, index) => (
+                          <span key={index} className="px-2 py-1 bg-yellow-100 text-yellow-800 text-xs rounded-full">
+                            {field}
+                          </span>
+                        ))}
+                        {profileCompletion.missingFields.length > 5 && (
+                          <span className="px-2 py-1 bg-yellow-100 text-yellow-800 text-xs rounded-full">
+                            +{profileCompletion.missingFields.length - 5} more
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Available Earnings */}
           {userProfile && (
             <div className="bg-primary-50 border border-primary-200 rounded-lg p-4">
@@ -300,10 +349,11 @@ const WithdrawalModal: React.FC<WithdrawalModalProps> = ({ isOpen, onClose, onAd
                 name="amount"
                 value={formData.amount}
                 onChange={handleChange}
-                placeholder="0.00"
+                placeholder={canWithdraw ? "0.00" : "Complete verification first"}
                 min="50"
                 step="0.01"
-                className={`form-input pl-8 ${errors.amount ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}`}
+                disabled={!canWithdraw}
+                className={`form-input pl-8 ${!canWithdraw ? 'bg-gray-100 cursor-not-allowed' : ''} ${errors.amount ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}`}
               />
             </div>
             {errors.amount && (
@@ -502,10 +552,10 @@ const WithdrawalModal: React.FC<WithdrawalModalProps> = ({ isOpen, onClose, onAd
             </button>
             <button
               type="submit"
-              disabled={isLoading}
-              className="btn-primary flex-1"
+              disabled={isLoading || !canWithdraw}
+              className={`btn-primary flex-1 ${!canWithdraw ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
-              {isLoading ? 'Processing...' : 'Request Withdrawal'}
+              {isLoading ? 'Processing...' : !canWithdraw ? 'Complete Verification First' : 'Request Withdrawal'}
             </button>
           </div>
         </form>

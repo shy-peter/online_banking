@@ -23,6 +23,9 @@ export interface UserProfile {
   totalBalance: number;
   availableBalance: number;
   status: 'active' | 'inactive' | 'suspended';
+  isVerified: boolean;
+  verificationStatus: 'pending' | 'verified' | 'rejected' | 'incomplete';
+  verificationDate?: string;
   createdAt: string;
   // New fields for enhanced signup
   secretPhrase?: string;

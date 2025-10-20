@@ -280,14 +280,15 @@ const InvestmentModal: React.FC<InvestmentModalProps> = ({ isOpen, onClose }) =>
             </label>
             <div className="relative">
               <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-              <input
+                <input
                 id="amount"
                 name="amount"
                 type="number"
+                inputMode="numeric"
                 min="100"
                 step="0.01"
                 required
-                className={`form-input pl-10 ${errors.amount ? 'border-danger-300 focus:border-danger-500 focus:ring-danger-500' : ''}`}
+                className={`input-field pl-10 ${errors.amount ? 'border-danger-300 focus:border-danger-500 focus:ring-danger-500' : ''}`}
                 placeholder="Enter amount (min. $100)"
                 value={formData.amount}
                 onChange={handleChange}
@@ -527,7 +528,6 @@ const InvestmentModal: React.FC<InvestmentModalProps> = ({ isOpen, onClose }) =>
                     <li>Investments are subject to terms and conditions</li>
                     <li>Returns are calculated monthly and compounded</li>
                     <li>Processing time may vary by payment method</li>
-                    <li><strong>Always include your account number in payment comments to avoid fund loss</strong></li>
                     {parseFloat(formData.amount) >= 100000 && (
                       <li>Amounts $100k+ require cryptocurrency payment</li>
                     )}

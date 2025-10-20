@@ -26,11 +26,14 @@ import {
   Eye,
   EyeOff,
   Monitor,
-  ArrowLeft
+  ArrowLeft,
+  AlertCircle
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { formatCurrency } from '../lib/appwrite';
+import { checkProfileCompletion, getVerificationStatus } from '../lib/verification';
 import LoadingSpinner from '../components/LoadingSpinner';
+import VerificationBadge from '../components/VerificationBadge';
 import PasswordChangeModal from '../components/PasswordChangeModal';
 import LoginHistoryModal from '../components/LoginHistoryModal';
 
@@ -218,6 +221,7 @@ const Profile = () => {
   const totalInvested = investments.reduce((sum, inv) => sum + (inv.status === 'active' ? inv.amount : 0), 0);
   const activeInvestments = investments.filter(inv => inv.status === 'active').length;
   const joinDate = userProfile?.createdAt ? new Date(userProfile.createdAt).toLocaleDateString('en-US') : 'N/A';
+  const profileCompletion = checkProfileCompletion(userProfile);
 
   return (
     <div className="space-y-6">
@@ -230,18 +234,58 @@ const Profile = () => {
       >
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Profile Settings</h1>
+            <div className="flex items-center space-x-3 mb-2">
+              <h1 className="text-2xl font-bold text-gray-900">Profile Settings</h1>
+              <VerificationBadge 
+                status={getVerificationStatus(userProfile)} 
+                size="sm" 
+              />
+            </div>
             <p className="text-gray-600 mt-1">Manage your account information and preferences</p>
           </div>
           <button
             onClick={() => navigate('/dashboard')}
-            className="flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors duration-200"
+            className="flex md:hidden items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors duration-200"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back to Dashboard
           </button>
         </div>
       </motion.div>
+
+      {/* Profile Completion Status */}
+      {!profileCompletion.isComplete && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.1 }}
+          className="card border-yellow-200 bg-yellow-50"
+        >
+          <div className="card-body p-6">
+            <div className="flex items-start space-x-3">
+              <AlertCircle className="w-6 h-6 text-yellow-600 mt-0.5" />
+              <div className="flex-1">
+                <h3 className="text-lg font-semibold text-yellow-800 mb-2">
+                  Complete Your Profile for Verification
+                </h3>
+                <p className="text-yellow-700 mb-4">
+                  Your profile is {profileCompletion.completionPercentage}% complete. Please complete all required fields to enable withdrawals and get verified.
+                </p>
+                <div className="space-y-2">
+                  <p className="text-sm font-medium text-yellow-800">Missing fields:</p>
+                  <div className="flex flex-wrap gap-2">
+                    {profileCompletion.missingFields.map((field, index) => (
+                      <span key={index} className="px-2 py-1 bg-yellow-100 text-yellow-800 text-xs rounded-full">
+                        {field}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </motion.div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Profile Information */}
@@ -396,7 +440,7 @@ const Profile = () => {
                     <input
                       name="name"
                       type="text"
-                      className="form-input"
+                      className="input-field border-red-500 p-2"
                       value={editData.name}
                       onChange={handleEditChange}
                     />
@@ -414,7 +458,7 @@ const Profile = () => {
                     <input
                       name="phone"
                       type="tel"
-                      className="form-input"
+                      className="input-field p-2"
                       value={editData.phone}
                       onChange={handleEditChange}
                       placeholder="Enter your phone number"
@@ -494,7 +538,7 @@ const Profile = () => {
                     <input
                       name="firstName"
                       type="text"
-                      className="form-input"
+                      className="input-field p-2"
                       value={editData.firstName}
                       onChange={handleEditChange}
                       placeholder="Enter your first name"
@@ -513,7 +557,7 @@ const Profile = () => {
                     <input
                       name="lastName"
                       type="text"
-                      className="form-input"
+                      className="input-field p-2"
                       value={editData.lastName}
                       onChange={handleEditChange}
                       placeholder="Enter your last name"
@@ -532,7 +576,7 @@ const Profile = () => {
                     <input
                       name="dateOfBirth"
                       type="date"
-                      className="form-input"
+                      className="input-field p-2"
                       value={editData.dateOfBirth}
                       onChange={handleEditChange}
                     />
@@ -550,7 +594,7 @@ const Profile = () => {
                     <input
                       name="occupation"
                       type="text"
-                      className="form-input"
+                      className="input-field p-2"
                       value={editData.occupation}
                       onChange={handleEditChange}
                       placeholder="Enter your occupation"
@@ -569,7 +613,7 @@ const Profile = () => {
                     <input
                       name="annualIncome"
                       type="number"
-                      className="form-input"
+                      className="input-field p-2"
                       value={editData.annualIncome}
                       onChange={handleEditChange}
                       placeholder="Enter your annual income"
@@ -589,7 +633,7 @@ const Profile = () => {
                     <input
                       name="address"
                       type="text"
-                      className="form-input"
+                      className="input-field p-2"
                       value={editData.address}
                       onChange={handleEditChange}
                       placeholder="Enter your address"
@@ -608,7 +652,7 @@ const Profile = () => {
                     <input
                       name="city"
                       type="text"
-                      className="form-input"
+                      className="input-field p-2"
                       value={editData.city}
                       onChange={handleEditChange}
                       placeholder="Enter your city"
@@ -627,7 +671,7 @@ const Profile = () => {
                     <input
                       name="state"
                       type="text"
-                      className="form-input"
+                      className="input-field p-2"
                       value={editData.state}
                       onChange={handleEditChange}
                       placeholder="Enter your state"
@@ -646,7 +690,7 @@ const Profile = () => {
                     <input
                       name="zipCode"
                       type="text"
-                      className="form-input"
+                      className="input-field p-2"
                       value={editData.zipCode}
                       onChange={handleEditChange}
                       placeholder="Enter your ZIP code"
@@ -664,7 +708,7 @@ const Profile = () => {
                   {isEditing ? (
                     <select
                       name="country"
-                      className="form-input"
+                      className="input-field p-2"
                       value={editData.country}
                       onChange={handleEditChange}
                     >
@@ -719,7 +763,7 @@ const Profile = () => {
                       <input
                         name="ssn"
                         type={showSSN ? 'text' : 'password'}
-                        className="form-input pr-10"
+                        className="input-field pr-10 p-2"
                         value={editData.ssn}
                         onChange={handleEditChange}
                         placeholder="XXX-XX-XXXX"
@@ -749,7 +793,7 @@ const Profile = () => {
                   {isEditing ? (
                     <select
                       name="idType"
-                      className="form-input"
+                      className="input-field p-2"
                       value={editData.idType}
                       onChange={handleEditChange}
                     >
@@ -774,7 +818,7 @@ const Profile = () => {
                       <input
                         name="secretPhrase"
                         type={showSecretPhrase ? 'text' : 'password'}
-                        className="form-input pr-10"
+                        className="input-field pr-10 p-2"
                         value={editData.secretPhrase}
                         onChange={handleEditChange}
                         placeholder="Enter your secret phrase"

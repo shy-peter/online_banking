@@ -136,9 +136,9 @@ const Investments: React.FC = () => {
           </div>
           <button
             onClick={() => navigate('/dashboard')}
-            className="flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors duration-200"
+            className="flex md:hidden items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors duration-200"
           >
-            <ArrowLeft className="w-4 h-4 mr-2" />
+            <ArrowLeft className="w-4 h-4 mr-2 " />
             Back to Dashboard
           </button>
         </div>
@@ -273,7 +273,7 @@ const Investments: React.FC = () => {
               <input
                 type="text"
                 placeholder="Search investments..."
-                className="form-input pl-10"
+                className="input-field pl-10"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
@@ -288,7 +288,7 @@ const Investments: React.FC = () => {
               <select
                 value={filter}
                 onChange={(e) => setFilter(e.target.value)}
-                className="form-input text-sm"
+                className="input-field text-sm"
               >
                 <option value="all">All Status</option>
                 <option value="active">Active</option>
