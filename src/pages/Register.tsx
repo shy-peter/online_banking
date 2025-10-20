@@ -1,14 +1,16 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Eye, EyeOff, Mail, Lock, User, DollarSign, Check, ArrowRight, Calendar, Shield, Phone, MapPin, Hash } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { INVESTMENT_PLANS, formatCurrency } from '../lib/appwrite';
 import LoadingSpinner from '../components/LoadingSpinner';
+import ConsentModal from '../components/ConsentModal';
 
 const Register = () => {
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
+  const [showConsentModal, setShowConsentModal] = useState(true);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -22,17 +24,31 @@ const Register = () => {
     state: '',
     zipCode: '',
     country: 'US',
-    selectedPlan: null,
+    annualIncome: '',
+    selectedPlan: null as any,
     agreedToTerms: false
   });
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [errors, setErrors] = useState({});
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const { register } = useAuth();
 
+  const handleConsentAccept = () => {
+    setShowConsentModal(false);
+  };
+
+  const handleConsentReject = () => {
+    setShowConsentModal(false);
+  };
+
+  const handleConsentClose = () => {
+    setShowConsentModal(false);
+    navigate('/');
+  };
+
   const validateStep1 = () => {
-    const newErrors = {};
+    const newErrors: Record<string, string> = {};
     
     if (!formData.name.trim()) {
       newErrors.name = 'Name is required';
@@ -59,7 +75,7 @@ const Register = () => {
   };
 
   const validateStep2 = () => {
-    const newErrors = {};
+    const newErrors: Record<string, string> = {};
     
     if (!formData.phone.trim()) {
       newErrors.phone = 'Phone number is required';
@@ -87,7 +103,7 @@ const Register = () => {
   };
 
   const validateStep3 = () => {
-    const newErrors = {};
+    const newErrors: Record<string, string> = {};
     
     if (!formData.address.trim()) {
       newErrors.address = 'Address is required';
@@ -126,8 +142,9 @@ const Register = () => {
     return true;
   };
 
-  const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value, type } = e.target;
+    const checked = (e.target as HTMLInputElement).checked;
     setFormData(prev => ({
       ...prev,
       [name]: type === 'checkbox' ? checked : value
@@ -139,7 +156,7 @@ const Register = () => {
     }
   };
 
-  const handlePlanSelect = (plan) => {
+  const handlePlanSelect = (plan: any) => {
     setFormData(prev => ({ ...prev, selectedPlan: plan }));
     if (errors.plan) {
       setErrors(prev => ({ ...prev, plan: '' }));
@@ -162,7 +179,7 @@ const Register = () => {
     }
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!validateStep4()) return;
@@ -455,7 +472,7 @@ const Register = () => {
                           onChange={handleChange}
                           className={`input-field pl-10 ${errors.ssn ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : ''}`}
                           placeholder="XXX-XX-XXXX"
-                          maxLength="11"
+                          maxLength={11}
                         />
                       </div>
                       {errors.ssn && <p className="mt-1 text-sm text-red-600">{errors.ssn}</p>}
@@ -614,10 +631,35 @@ const Register = () => {
                           onChange={handleChange}
                           className={`input-field pl-10 ${errors.zipCode ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : ''}`}
                           placeholder="12345"
-                          maxLength="10"
+                          maxLength={10}
                         />
                       </div>
                       {errors.zipCode && <p className="mt-1 text-sm text-red-600">{errors.zipCode}</p>}
+                    </div>
+
+                    {/* Annual Income Field */}
+                    <div>
+                      <label htmlFor="annualIncome" className="block text-sm font-medium text-gray-700 mb-2">
+                        Annual Income
+                      </label>
+                      <div className="relative">
+                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                          <DollarSign className="h-5 w-5 text-gray-400" />
+                        </div>
+                        <input
+                          id="annualIncome"
+                          name="annualIncome"
+                          type="number"
+                          value={formData.annualIncome}
+                          onChange={handleChange}
+                          className={`input-field pl-10 ${errors.annualIncome ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : ''}`}
+                          placeholder="Enter your annual income"
+                          min="0"
+                          step="1000"
+                        />
+                      </div>
+                      {errors.annualIncome && <p className="mt-1 text-sm text-red-600">{errors.annualIncome}</p>}
+                      <p className="mt-1 text-xs text-gray-500">Optional - Used for investment recommendations</p>
                     </div>
 
                     <div className="flex justify-between pt-6">
@@ -644,7 +686,7 @@ const Register = () => {
                     </h2>
 
                     <div className="grid gap-4 max-h-96 overflow-y-auto">
-                      {INVESTMENT_PLANS.map((plan) => (
+                      {INVESTMENT_PLANS.map((plan: any) => (
                         <div
                           key={plan.id}
                           onClick={() => handlePlanSelect(plan)}
@@ -745,6 +787,14 @@ const Register = () => {
           </div>
         </motion.div>
       </div>
+
+      {/* Consent Modal */}
+      <ConsentModal
+        isOpen={showConsentModal}
+        onAccept={handleConsentAccept}
+        onReject={handleConsentReject}
+        onClose={handleConsentClose}
+      />
     </div>
   );
 };

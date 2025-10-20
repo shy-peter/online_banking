@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 import { 
   Bell, 
   X, 
@@ -13,12 +14,14 @@ import {
   CheckCheck
 } from 'lucide-react';
 import { useNotifications } from '../contexts/NotificationContext';
+import { useAuth } from '../contexts/AuthContext';
 import { formatCurrency } from '../lib/appwrite';
 import type { Notification } from '../types/appwrite';
 
 const NotificationDropdown: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
   const { 
     notifications, 
     unreadCount, 
@@ -83,18 +86,20 @@ const NotificationDropdown: React.FC = () => {
     if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
     if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
     if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)}d ago`;
-    return date.toLocaleDateString();
+    return date.toLocaleDateString('en-US');
   };
 
   const handleNotificationClick = async (notification: Notification) => {
-    if (notification.isRead !== 'true') {
+    if (notification.isRead !== 'true' && notification.isRead !== true) {
       await markAsRead(notification.$id);
     }
     
+    // Close the dropdown
+    setIsOpen(false);
+    
     // If there's an action URL, navigate to it
     if (notification.actionUrl) {
-      // You can implement navigation logic here
-      console.log('Navigate to:', notification.actionUrl);
+      navigate(notification.actionUrl);
     }
   };
 
@@ -167,9 +172,13 @@ const NotificationDropdown: React.FC = () => {
                       key={notification.$id}
                       initial={{ opacity: 0, x: -20 }}
                       animate={{ opacity: 1, x: 0 }}
-                      className={`p-4 hover:bg-gray-50 cursor-pointer transition-colors border-l-4 ${
+                      className={`p-4 cursor-pointer transition-colors border-l-4 ${
                         getPriorityColor(notification.priority)
-                      } ${notification.isRead !== 'true' ? 'bg-blue-50' : ''}`}
+                      } ${
+                        notification.isRead !== 'true' && notification.isRead !== true 
+                          ? 'bg-blue-50 hover:bg-blue-100' 
+                          : 'bg-gray-50 hover:bg-gray-100'
+                      }`}
                       onClick={() => handleNotificationClick(notification)}
                     >
                       <div className="flex items-start space-x-3">
@@ -178,21 +187,23 @@ const NotificationDropdown: React.FC = () => {
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center justify-between">
-                            <p className={`text-sm font-medium ${
-                              notification.isRead !== 'true' ? 'text-gray-900' : 'text-gray-700'
-                            }`}>
+                            <p                               className={`text-sm font-medium ${
+                                notification.isRead !== 'true' && notification.isRead !== true ? 'text-gray-900' : 'text-gray-600'
+                              }`}>
                               {notification.title}
                             </p>
                             <div className="flex items-center space-x-2">
                               <span className="text-xs text-gray-500">
                                 {formatTimeAgo(notification.$createdAt)}
                               </span>
-                              {notification.isRead !== 'true' && (
+                              {notification.isRead !== 'true' && notification.isRead !== true && (
                                 <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
                               )}
                             </div>
                           </div>
-                          <p className="text-sm text-gray-600 mt-1">
+                          <p className={`text-sm mt-1 ${
+                            notification.isRead !== 'true' && notification.isRead !== true ? 'text-gray-700' : 'text-gray-500'
+                          }`}>
                             {notification.message}
                           </p>
                           {notification.actionUrl && (

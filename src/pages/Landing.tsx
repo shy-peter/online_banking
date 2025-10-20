@@ -1,5 +1,6 @@
-import React, { useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import ConsentModal from '../components/ConsentModal';
 import { 
   CreditCard, 
   User, 
@@ -29,6 +30,27 @@ import {
 } from 'lucide-react';
 
 const Landing: React.FC = () => {
+  const navigate = useNavigate();
+  const [showConsentModal, setShowConsentModal] = useState(false);
+
+  const handleSignupClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setShowConsentModal(true);
+  };
+
+  const handleConsentAccept = () => {
+    setShowConsentModal(false);
+    navigate('/signup');
+  };
+
+  const handleConsentReject = () => {
+    setShowConsentModal(false);
+  };
+
+  const handleConsentClose = () => {
+    setShowConsentModal(false);
+  };
+
   useEffect(() => {
     // Initialize any necessary effects here
     const handleScroll = () => {
@@ -78,7 +100,7 @@ const Landing: React.FC = () => {
             {/* CTA Buttons */}
             <div className="hidden md:flex items-center space-x-4">
               <Link to="/login" className="text-blue-600 hover:text-blue-700 font-medium transition-colors">Login</Link>
-              <Link to="/register" className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium transition-colors">Open Account</Link>
+              <button onClick={handleSignupClick} className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium transition-colors">Open Account</button>
             </div>
             
             {/* Mobile Menu Button */}
@@ -99,7 +121,7 @@ const Landing: React.FC = () => {
             <a href="#contact" className="block text-gray-700 hover:text-blue-600 font-medium">Contact</a>
             <div className="pt-4 border-t border-gray-200 space-y-3">
               <Link to="/login" className="block w-full text-left text-blue-600 font-medium">Login</Link>
-              <Link to="/register" className="block w-full bg-blue-600 text-white px-4 py-2 rounded-lg font-medium">Open Account</Link>
+              <button onClick={handleSignupClick} className="block w-full bg-blue-600 text-white px-4 py-2 rounded-lg font-medium">Open Account</button>
             </div>
           </div>
         </div>
@@ -139,9 +161,9 @@ const Landing: React.FC = () => {
               
               {/* CTA Buttons */}
               <div className="flex flex-col sm:flex-row gap-4">
-                <Link to="/register" className="bg-white text-blue-600 px-8 py-4 rounded-lg font-semibold hover:bg-gray-50 transition-colors shadow-lg text-center">
+                <button onClick={handleSignupClick} className="bg-white text-blue-600 px-8 py-4 rounded-lg font-semibold hover:bg-gray-50 transition-colors shadow-lg text-center">
                   Open Free Account
-                </Link>
+                </button>
                 <button className="glass-effect text-white px-8 py-4 rounded-lg font-semibold hover:bg-white/20 transition-colors">
                   Watch Demo
                 </button>
@@ -549,9 +571,9 @@ const Landing: React.FC = () => {
             Join over 500,000 satisfied customers who trust InvestFlow Bank with their financial future.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link to="/register" className="bg-white text-blue-600 px-8 py-4 rounded-lg font-semibold hover:bg-gray-50 transition-colors shadow-lg">
+            <button onClick={handleSignupClick} className="bg-white text-blue-600 px-8 py-4 rounded-lg font-semibold hover:bg-gray-50 transition-colors shadow-lg">
               Open Your Account Today
-            </Link>
+            </button>
             <button className="glass-effect text-white px-8 py-4 rounded-lg font-semibold hover:bg-white/20 transition-colors">
               Schedule a Consultation
             </button>
@@ -666,7 +688,7 @@ const Landing: React.FC = () => {
         </div>
       </footer>
 
-      <style jsx>{`
+      <style>{`
         .gradient-bg {
           background: linear-gradient(135deg, #1e40af 0%, #3b82f6 50%, #60a5fa 100%);
         }
@@ -729,6 +751,14 @@ const Landing: React.FC = () => {
           width: 100%;
         }
       `}</style>
+
+      {/* Consent Modal */}
+      <ConsentModal
+        isOpen={showConsentModal}
+        onAccept={handleConsentAccept}
+        onReject={handleConsentReject}
+        onClose={handleConsentClose}
+      />
     </div>
   );
 };

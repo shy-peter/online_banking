@@ -4,13 +4,8 @@ import { X, DollarSign, Smartphone, Wallet, Bitcoin, AlertCircle, Copy, Check } 
 import { useAuth } from '../contexts/AuthContext';
 import { getInvestmentPlan, formatCurrency } from '../lib/appwrite';
 import LoadingSpinner from './LoadingSpinner';
-import type { InvestmentPlan } from '../types/appwrite';
-
-// Import QR code images
-import venmoQR from '../assets/qr-codes/venmo-qr.png';
-import cashappQR from '../assets/qr-codes/cashapp-qr.jpg';
-import paypalQR from '../assets/qr-codes/paypal-qr.jpg';
-import cryptoQR from '../assets/qr-codes/crypto-qr.jpg';
+import PaymentMethodSelector from './PaymentMethodSelector';
+import type { InvestmentPlan, PaymentMethodType } from '../types/appwrite';
 
 interface InvestmentModalProps {
   isOpen: boolean;
@@ -20,25 +15,32 @@ interface InvestmentModalProps {
 interface FormData {
   amount: string;
   paymentMethod: string;
+  bonusCode: string;
+  selectedPaymentMethodType: PaymentMethodType | null;
 }
 
 interface Errors {
   amount?: string;
   paymentMethod?: string;
+  bonusCode?: string;
   submit?: string;
 }
 
 const InvestmentModal: React.FC<InvestmentModalProps> = ({ isOpen, onClose }) => {
-  const { createInvestment, userProfile } = useAuth();
+  const { createInvestment, userProfile, validateBonusCode } = useAuth();
   const [formData, setFormData] = useState<FormData>({
     amount: '',
-    paymentMethod: ''
+    paymentMethod: '',
+    bonusCode: '',
+    selectedPaymentMethodType: null
   });
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [selectedPlan, setSelectedPlan] = useState<InvestmentPlan | null>(null);
   const [errors, setErrors] = useState<Errors>({});
   const [showQRCode, setShowQRCode] = useState<boolean>(false);
   const [copiedAccountNumber, setCopiedAccountNumber] = useState<boolean>(false);
+  const [bonusCodeInfo, setBonusCodeInfo] = useState<{ dailyRate: number; monthlyRate: number; description?: string } | null>(null);
+  const [validatingBonusCode, setValidatingBonusCode] = useState<boolean>(false);
 
   useEffect(() => {
     if (formData.amount) {
@@ -140,6 +142,35 @@ const InvestmentModal: React.FC<InvestmentModalProps> = ({ isOpen, onClose }) =>
     return Object.keys(newErrors).length === 0;
   };
 
+  const handleBonusCodeValidation = async (code: string): Promise<void> => {
+    if (!code.trim()) {
+      setBonusCodeInfo(null);
+      setErrors(prev => ({ ...prev, bonusCode: undefined }));
+      return;
+    }
+
+    setValidatingBonusCode(true);
+    try {
+      const result = await validateBonusCode(code);
+      if (result.success && result.bonusCode) {
+        setBonusCodeInfo({
+          dailyRate: result.bonusCode.dailyRate,
+          monthlyRate: result.bonusCode.monthlyRate,
+          description: result.bonusCode.description
+        });
+        setErrors(prev => ({ ...prev, bonusCode: undefined }));
+      } else {
+        setBonusCodeInfo(null);
+        setErrors(prev => ({ ...prev, bonusCode: result.error || 'Invalid bonus code' }));
+      }
+    } catch (error) {
+      setBonusCodeInfo(null);
+      setErrors(prev => ({ ...prev, bonusCode: 'Failed to validate bonus code' }));
+    } finally {
+      setValidatingBonusCode(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>): Promise<void> => {
     e.preventDefault();
     
@@ -151,14 +182,15 @@ const InvestmentModal: React.FC<InvestmentModalProps> = ({ isOpen, onClose }) =>
     
     try {
       const amount = parseFloat(formData.amount);
-      const result = await createInvestment(amount, formData.paymentMethod);
+      const result = await createInvestment(amount, formData.paymentMethod, formData.bonusCode || undefined);
       
       if (result.success) {
         // Reset form and close modal
-        setFormData({ amount: '', paymentMethod: '' });
+        setFormData({ amount: '', paymentMethod: '', bonusCode: '' });
         setSelectedPlan(null);
         setErrors({});
         setShowQRCode(false);
+        setBonusCodeInfo(null);
         onClose();
       } else {
         // Show error message
@@ -286,13 +318,13 @@ const InvestmentModal: React.FC<InvestmentModalProps> = ({ isOpen, onClose }) =>
                 <div>
                   <span className="text-primary-600 font-medium">Monthly Income:</span>
                   <div className="text-primary-900 font-semibold">
-                    {formData.amount ? formatCurrency((parseFloat(formData.amount) * (selectedPlan.interestRate / 100)) / 12) : '$0.00'}
+                    {formData.amount ? formatCurrency((parseFloat(formData.amount) * (selectedPlan.interestRate / 100)) / 12 * 100) : '$0.00'}
                   </div>
                 </div>
                 <div>
                   <span className="text-primary-600 font-medium">Yearly Income:</span>
                   <div className="text-primary-900 font-semibold">
-                    {formData.amount ? formatCurrency(parseFloat(formData.amount) * (selectedPlan.interestRate / 100)) : '$0.00'}
+                    {formData.amount ? formatCurrency(parseFloat(formData.amount) * (selectedPlan.interestRate / 100) * 100) : '$0.00'}
                   </div>
                 </div>
               </div>
@@ -302,61 +334,90 @@ const InvestmentModal: React.FC<InvestmentModalProps> = ({ isOpen, onClose }) =>
           {/* Payment Method */}
           {selectedPlan && (
             <div>
-              <label className="form-label">Payment Method</label>
-              <div className="grid grid-cols-1 gap-3 mt-2">
-                {selectedPlan.paymentMethods.map((method) => (
-                  <motion.label
-                    key={method}
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    className={`flex items-center p-4 border rounded-lg cursor-pointer transition-all duration-200 ${
-                      formData.paymentMethod === method
-                        ? 'border-primary-500 bg-primary-50'
-                        : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
-                    }`}
-                  >
-                    <input
-                      type="radio"
-                      name="paymentMethod"
-                      value={method}
-                      checked={formData.paymentMethod === method}
-                      onChange={handleChange}
-                      className="sr-only"
-                    />
-                    <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center mr-3 ${
-                      formData.paymentMethod === method
-                        ? 'border-primary-500'
-                        : 'border-gray-300'
-                    }`}>
-                      {formData.paymentMethod === method && (
-                        <div className="w-2.5 h-2.5 rounded-full bg-primary-500"></div>
-                      )}
-                    </div>
-                    <div className={`mr-3 ${
-                      formData.paymentMethod === method ? 'text-primary-600' : 'text-gray-600'
-                    }`}>
-                      {getPaymentMethodIcon(method)}
-                    </div>
-                    <div className="flex-1">
-                      <div className={`font-medium ${
-                        formData.paymentMethod === method ? 'text-primary-900' : 'text-gray-900'
-                      }`}>
-                        {getPaymentMethodName(method)}
-                      </div>
-                      <div className={`text-sm ${
-                        formData.paymentMethod === method ? 'text-primary-600' : 'text-gray-500'
-                      }`}>
-                        {method === 'crypto' && parseFloat(formData.amount) >= 100000 ? 'Required for amounts $100k+' : 'Available for your investment'}
-                      </div>
-                    </div>
-                  </motion.label>
-                ))}
-              </div>
+              <PaymentMethodSelector
+                onSelect={(paymentMethodType) => {
+                  setFormData(prev => ({
+                    ...prev,
+                    paymentMethod: paymentMethodType.type,
+                    selectedPaymentMethodType: paymentMethodType
+                  }));
+                }}
+                showQRCode={true}
+                title="Select Payment Method"
+                description="Choose your preferred payment method for this investment"
+              />
               {errors.paymentMethod && (
                 <div className="flex items-center mt-2 text-sm text-danger-600">
                   <AlertCircle className="w-4 h-4 mr-1" />
                   {errors.paymentMethod}
                 </div>
+              )}
+            </div>
+          )}
+
+          {/* Bonus Code */}
+          {selectedPlan && (
+            <div>
+              <label htmlFor="bonusCode" className="form-label">
+                Bonus Code (Optional)
+              </label>
+              <div className="relative bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-300 rounded-xl p-3 shadow-sm ring-1 ring-green-200">
+                <input
+                  id="bonusCode"
+                  name="bonusCode"
+                  type="text"
+                  className={`w-full px-3 py-2 bg-transparent border-0 focus:outline-none focus:ring-0 ${errors.bonusCode ? 'text-red-600' : 'text-gray-900'}`}
+                  placeholder="Enter bonus code for enhanced earnings"
+                  value={formData.bonusCode}
+                  onChange={(e) => {
+                    setFormData(prev => ({ ...prev, bonusCode: e.target.value }));
+                    // Debounce validation
+                    const timeoutId = setTimeout(() => {
+                      handleBonusCodeValidation(e.target.value);
+                    }, 500);
+                    return () => clearTimeout(timeoutId);
+                  }}
+                />
+                {validatingBonusCode && (
+                  <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary-600"></div>
+                  </div>
+                )}
+              </div>
+              {errors.bonusCode && (
+                <div className="flex items-center mt-1 text-sm text-danger-600">
+                  <AlertCircle className="w-4 h-4 mr-1" />
+                  {errors.bonusCode}
+                </div>
+              )}
+              {bonusCodeInfo && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="mt-3 bg-green-50 border border-green-200 rounded-lg p-4"
+                >
+                  <div className="flex items-center mb-2">
+                    <Check className="w-4 h-4 text-green-600 mr-2" />
+                    <span className="text-sm font-medium text-green-800">Bonus Code Applied!</span>
+                  </div>
+                  {bonusCodeInfo.description && (
+                    <p className="text-sm text-green-700 mb-2">{bonusCodeInfo.description}</p>
+                  )}
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <span className="text-green-600 font-medium">Daily Rate:</span>
+                      <div className="text-green-900 font-semibold">
+                        {bonusCodeInfo.dailyRate}%
+                      </div>
+                    </div>
+                    <div>
+                      <span className="text-green-600 font-medium">Monthly Rate:</span>
+                      <div className="text-green-900 font-semibold">
+                        {bonusCodeInfo.monthlyRate}%
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
               )}
             </div>
           )}
@@ -509,7 +570,7 @@ const InvestmentModal: React.FC<InvestmentModalProps> = ({ isOpen, onClose }) =>
                   <span className="ml-2">Processing...</span>
                 </div>
               ) : (
-                `Invest ${formData.amount ? formatCurrency(parseFloat(formData.amount)) : ''}`
+                `Invest ${formData.amount ? formatCurrency(parseFloat(formData.amount) * 100) : ''}`
               )}
             </button>
           </div>

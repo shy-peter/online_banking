@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 import {
   Plus,
   TrendingUp,
@@ -9,18 +10,29 @@ import {
   CheckCircle,
   XCircle,
   Filter,
-  Search
+  Search,
+  ArrowDownRight,
+  X,
+  ArrowLeft,
+  Send
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { formatCurrency, calculateMonthlyInterest, getInvestmentPlan, INVESTMENT_PLANS } from '../lib/appwrite';
 import InvestmentModal from '../components/InvestmentModal';
+import WithdrawalModal from '../components/WithdrawalModal';
+import TransferModal from '../components/TransferModal';
 import type { Investment } from '../types/appwrite';
 
 const Investments: React.FC = () => {
-  const { investments, userProfile } = useAuth();
+  const { investments, transactions, userProfile } = useAuth();
+  const navigate = useNavigate();
   const [showModal, setShowModal] = useState<boolean>(false);
+  const [showWithdrawalModal, setShowWithdrawalModal] = useState<boolean>(false);
+  const [showTransferModal, setShowTransferModal] = useState<boolean>(false);
   const [filter, setFilter] = useState<string>('all');
   const [searchTerm, setSearchTerm] = useState<string>('');
+  const [selectedInvestment, setSelectedInvestment] = useState<Investment | null>(null);
+  const [showDailyReturns, setShowDailyReturns] = useState<boolean>(false);
 
   // Filter investments
   const filteredInvestments = investments.filter(investment => {
@@ -56,6 +68,33 @@ const Investments: React.FC = () => {
     }
   };
 
+  // Calculate daily returns for an investment
+  const calculateDailyReturns = (investment: Investment) => {
+    if (investment.status !== 'active') return [];
+    
+    const returns = [];
+    const startDate = new Date(investment.$createdAt);
+    const today = new Date();
+    const dailyRate = investment.interestRate / (100 * 365); // Convert annual to daily
+    
+    for (let d = new Date(startDate); d <= today; d.setDate(d.getDate() + 1)) {
+      const dayReturns = investment.amount * dailyRate;
+      returns.push({
+        date: new Date(d).toISOString().split('T')[0],
+        amount: Math.round(dayReturns),
+        cumulative: Math.round(dayReturns * Math.ceil((d.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)))
+      });
+    }
+    
+    return returns;
+  };
+
+  // Handle viewing daily returns
+  const handleViewDailyReturns = (investment: Investment) => {
+    setSelectedInvestment(investment);
+    setShowDailyReturns(true);
+  };
+
   const calculateEarnings = (investment: Investment): number => {
     if (investment.status !== 'active') return 0;
     const monthsActive = Math.floor((new Date().getTime() - new Date(investment.$createdAt).getTime()) / (1000 * 60 * 60 * 24 * 30));
@@ -63,7 +102,16 @@ const Investments: React.FC = () => {
   };
 
   const totalInvested = investments.reduce((sum, inv) => sum + (inv.status === 'active' ? inv.amount : 0), 0);
-  const totalEarnings = investments.reduce((sum, inv) => sum + calculateEarnings(inv), 0);
+  const totalEarnings = transactions
+    .filter(t => (t.type === 'earning' || t.type === 'transfer_in') && t.status === 'completed')
+    .reduce((sum, t) => sum + t.amount, 0);
+  
+  const totalWithdrawals = transactions
+    .filter(t => (t.type === 'withdrawal' || t.type === 'transfer_out') && t.status === 'completed')
+    .reduce((sum, t) => sum + t.amount, 0);
+  
+  const availableBalance = totalEarnings - totalWithdrawals;
+  
   const activeInvestments = investments.filter(inv => inv.status === 'active').length;
   const monthlyIncome = investments.reduce((sum, inv) => {
     if (inv.status === 'active') {
@@ -79,19 +127,44 @@ const Investments: React.FC = () => {
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
-        className="flex flex-col sm:flex-row sm:items-center sm:justify-between"
+        className="flex flex-col lg:flex-row lg:items-center lg:justify-between"
       >
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">My Investments</h1>
-          <p className="text-gray-600 mt-1">Manage and track your investment portfolio</p>
+        <div className="flex items-center justify-between w-full">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">My Investments</h1>
+            <p className="text-gray-600 mt-1">Manage and track your investment portfolio</p>
+          </div>
+          <button
+            onClick={() => navigate('/dashboard')}
+            className="flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors duration-200"
+          >
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Back to Dashboard
+          </button>
         </div>
-        <button
-          onClick={() => setShowModal(true)}
-          className="btn-primary mt-4 sm:mt-0 px-6 py-3"
-        >
-          <Plus className="w-4 h-4 mr-2" />
-          New Investment
-        </button>
+        <div className="flex flex-col sm:flex-row gap-3 mt-4 lg:mt-0">
+          <button
+            onClick={() => setShowWithdrawalModal(true)}
+            className="btn-secondary px-6 py-3"
+          >
+            <ArrowDownRight className="w-4 h-4 mr-2" />
+            Withdraw Funds
+          </button>
+          <button
+            onClick={() => setShowTransferModal(true)}
+            className="btn-secondary px-6 py-3"
+          >
+            <Send className="w-4 h-4 mr-2" />
+            Transfer Funds
+          </button>
+          <button
+            onClick={() => setShowModal(true)}
+            className="btn-primary px-6 py-3"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            New Investment
+          </button>
+        </div>
       </motion.div>
 
       {/* Summary Cards */}
@@ -99,7 +172,7 @@ const Investments: React.FC = () => {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, delay: 0.1 }}
-        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"
+        className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 lg:gap-6"
       >
         <div className="card">
           <div className="card-body p-6">
@@ -128,6 +201,25 @@ const Investments: React.FC = () => {
               </div>
               <div className="w-12 h-12 bg-success-100 rounded-lg flex items-center justify-center">
                 <TrendingUp className="w-6 h-6 text-success-600" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="card">
+          <div className="card-body p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Available Balance</p>
+                <p className="text-2xl font-bold text-gray-900 mt-2">
+                  {formatCurrency(availableBalance)}
+                </p>
+                <p className="text-xs text-gray-500 mt-1">
+                  {totalWithdrawals > 0 ? `${formatCurrency(totalWithdrawals)} withdrawn` : 'No withdrawals yet'}
+                </p>
+              </div>
+              <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                <DollarSign className="w-6 h-6 text-blue-600" />
               </div>
             </div>
           </div>
@@ -236,24 +328,24 @@ const Investments: React.FC = () => {
                     transition={{ duration: 0.3, delay: index * 0.1 }}
                     className="p-6 hover:bg-gray-50 transition-colors duration-200"
                   >
-                    <div className="flex items-center justify-between">
+                    <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between">
                       <div className="flex items-center space-x-4">
                         <div className="w-12 h-12 bg-gradient-to-r from-primary-500 to-primary-600 rounded-lg flex items-center justify-center">
                           <TrendingUp className="w-6 h-6 text-white" />
                         </div>
-                        <div>
+                        <div className="flex-1">
                           <h4 className="text-lg font-semibold text-gray-900">
                             {formatCurrency(investment.amount)}
                           </h4>
-                          <div className="flex items-center space-x-4 mt-1">
+                          <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-4 mt-1">
                             <span className="text-sm text-gray-600">
                               {plan?.name || 'Investment Plan'}
                             </span>
-                            <span className="text-xs text-gray-400">•</span>
+                            <span className="hidden sm:inline text-xs text-gray-400">•</span>
                             <span className="text-sm font-medium text-primary-600">
                               {investment.interestRate}% APY
                             </span>
-                            <span className="text-xs text-gray-400">•</span>
+                            <span className="hidden sm:inline text-xs text-gray-400">•</span>
                             <span className="text-sm text-gray-600 capitalize">
                               {investment.plan || 'Investment Plan'}
                             </span>
@@ -261,22 +353,26 @@ const Investments: React.FC = () => {
                         </div>
                       </div>
                       
-                      <div className="text-right">
-                        <div className="flex items-center space-x-3 mb-2">
+                      <div className="flex items-center justify-between lg:flex-col lg:items-end lg:space-y-2 mt-4 lg:mt-0">
+                        <div className="flex items-center space-x-3">
                           {getStatusIcon(investment.status)}
                           <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(investment.status)}`}>
                             {investment.status}
                           </span>
                         </div>
                         <div className="text-sm text-gray-600">
-                          Started: {new Date(investment.$createdAt).toLocaleDateString()}
+                          Started: {new Date(investment.$createdAt).toLocaleDateString('en-US')} at {new Date(investment.$createdAt).toLocaleTimeString('en-US', { 
+                            hour: '2-digit', 
+                            minute: '2-digit',
+                            hour12: true 
+                          })}
                         </div>
                       </div>
                     </div>
                     
                     {investment.status === 'active' && (
                       <div className="mt-4 pt-4 border-t border-gray-200">
-                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
                           <div>
                             <p className="text-xs text-gray-500 mb-1">Total Earned</p>
                             <p className="text-sm font-semibold text-success-600">
@@ -302,6 +398,13 @@ const Investments: React.FC = () => {
                             </p>
                           </div>
                         </div>
+                        <button
+                          onClick={() => handleViewDailyReturns(investment)}
+                          className="w-full btn-secondary py-2 text-sm"
+                        >
+                          <Calendar className="w-4 h-4 mr-2" />
+                          View Daily Returns
+                        </button>
                       </div>
                     )}
                   </motion.div>
@@ -343,6 +446,114 @@ const Investments: React.FC = () => {
             isOpen={showModal}
             onClose={() => setShowModal(false)}
           />
+        )}
+      </AnimatePresence>
+
+      {/* Withdrawal Modal */}
+      <AnimatePresence>
+        {showWithdrawalModal && (
+          <WithdrawalModal
+            isOpen={showWithdrawalModal}
+            onClose={() => setShowWithdrawalModal(false)}
+            onAddPaymentMethod={() => {
+              setShowWithdrawalModal(false);
+              // Navigate to settings payment methods tab
+              navigate('/settings?tab=payment');
+            }}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Transfer Modal */}
+      <AnimatePresence>
+        {showTransferModal && (
+          <TransferModal
+            isOpen={showTransferModal}
+            onClose={() => setShowTransferModal(false)}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Daily Returns Modal */}
+      <AnimatePresence>
+        {showDailyReturns && selectedInvestment && (
+          <div className="fixed inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[80vh] overflow-hidden"
+            >
+              <div className="p-6 border-b border-gray-200">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900">Daily Returns</h3>
+                    <p className="text-sm text-gray-600 mt-1">
+                      {selectedInvestment.plan} - {formatCurrency(selectedInvestment.amount)}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => {
+                      setShowDailyReturns(false);
+                      setSelectedInvestment(null);
+                    }}
+                    className="text-gray-400 hover:text-gray-600 transition-colors duration-200"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+              </div>
+              
+              <div className="p-6 overflow-y-auto max-h-[60vh]">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {calculateDailyReturns(selectedInvestment).map((dayReturn, index) => (
+                    <motion.div
+                      key={dayReturn.date}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.3, delay: index * 0.02 }}
+                      className="bg-gray-50 rounded-lg p-4 border border-gray-200"
+                    >
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-sm font-medium text-gray-900">
+                          {new Date(dayReturn.date).toLocaleDateString('en-US', { 
+                            month: 'short', 
+                            day: 'numeric',
+                            year: 'numeric'
+                          })}
+                        </span>
+                        <span className="text-xs text-gray-500">
+                          Day {index + 1}
+                        </span>
+                      </div>
+                      <div className="space-y-1">
+                        <div className="flex justify-between text-sm">
+                          <span className="text-gray-600">Daily Return:</span>
+                          <span className="font-semibold text-success-600">
+                            +{formatCurrency(dayReturn.amount)}
+                          </span>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                          <span className="text-gray-600">Cumulative:</span>
+                          <span className="font-semibold text-primary-600">
+                            {formatCurrency(dayReturn.cumulative)}
+                          </span>
+                        </div>
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+                
+                {calculateDailyReturns(selectedInvestment).length === 0 && (
+                  <div className="text-center py-12">
+                    <Calendar className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">No daily returns yet</h3>
+                    <p className="text-gray-600">Daily returns will appear here once the investment is active</p>
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          </div>
         )}
       </AnimatePresence>
     </div>

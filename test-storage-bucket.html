@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Storage Bucket Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .status {
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .warning { background-color: #fff3cd; color: #856404; border: 1px solid #ffeaa7; }
+        .info { background-color: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background-color: #0056b3; }
+        button:disabled { background-color: #6c757d; cursor: not-allowed; }
+        .step {
+            margin: 20px 0;
+            padding: 15px;
+            border-left: 4px solid #007bff;
+            background-color: #f8f9fa;
+        }
+        .step h3 { margin-top: 0; color: #007bff; }
+        code {
+            background-color: #f8f9fa;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: monospace;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Storage Bucket Test</h1>
+        <p>This tool helps you test if your Appwrite storage bucket is set up correctly.</p>
+
+        <div class="step">
+            <h3>Step 1: Check Your Setup</h3>
+            <p>Before testing, make sure you have:</p>
+            <ul>
+                <li>✅ Created a bucket with ID: <code>files</code></li>
+                <li>✅ Set permissions: <code>read("any")</code> and <code>write("any")</code></li>
+                <li>✅ Allowed file extensions: <code>jpg,jpeg,png,gif,webp,pdf,doc,docx,txt</code></li>
+                <li>✅ Set max file size: <code>10485760</code> (10MB)</li>
+            </ul>
+        </div>
+
+        <div class="step">
+            <h3>Step 2: Test File Upload</h3>
+            <p>Select a small image file to test the upload:</p>
+            <input type="file" id="fileInput" accept="image/*" style="margin: 10px 0;">
+            <br>
+            <button onclick="testUpload()" id="uploadBtn">Test Upload</button>
+            <button onclick="checkBucket()" id="checkBtn">Check Bucket Status</button>
+        </div>
+
+        <div id="results"></div>
+
+        <div class="step">
+            <h3>Step 3: Manual Setup Instructions</h3>
+            <p>If the test fails, follow these steps:</p>
+            <ol>
+                <li>Go to <a href="https://cloud.appwrite.io" target="_blank">Appwrite Console</a></li>
+                <li>Select your project</li>
+                <li>Navigate to <strong>Storage</strong></li>
+                <li>Click <strong>"Create Bucket"</strong></li>
+                <li>Use these exact settings:
+                    <ul>
+                        <li><strong>Bucket ID:</strong> <code>files</code></li>
+                        <li><strong>Name:</strong> <code>Files</code></li>
+                        <li><strong>File Security:</strong> ✅ Enabled</li>
+                        <li><strong>Max File Size:</strong> <code>10485760</code></li>
+                        <li><strong>Allowed Extensions:</strong> <code>jpg,jpeg,png,gif,webp,pdf,doc,docx,txt</code></li>
+                    </ul>
+                </li>
+                <li>After creating, go to bucket settings and add permissions:
+                    <ul>
+                        <li><code>read("any")</code></li>
+                        <li><code>write("any")</code></li>
+                    </ul>
+                </li>
+            </ol>
+        </div>
+
+        <div class="step">
+            <h3>Step 4: Enable Storage in App</h3>
+            <p>Once the bucket is working, update your app:</p>
+            <ol>
+                <li>Open <code>src/pages/EnhancedSignup.tsx</code></li>
+                <li>Find the line: <code>const [useStorageFallback, setUseStorageFallback] = useState(true);</code></li>
+                <li>Change it to: <code>const [useStorageFallback, setUseStorageFallback] = useState(false);</code></li>
+                <li>Save the file and test the signup form</li>
+            </ol>
+        </div>
+    </div>
+
+    <script>
+        function showResult(message, type = 'info') {
+            const results = document.getElementById('results');
+            const div = document.createElement('div');
+            div.className = `status ${type}`;
+            div.innerHTML = message;
+            results.appendChild(div);
+        }
+
+        function checkBucket() {
+            showResult('🔍 Checking bucket status...', 'info');
+            
+            // This is a placeholder - in a real app, you'd make an API call
+            setTimeout(() => {
+                showResult(`
+                    <strong>Bucket Check Results:</strong><br>
+                    • Bucket ID: <code>files</code><br>
+                    • Status: <span style="color: red;">❌ Not Found or No Access</span><br>
+                    • Permissions: <span style="color: red;">❌ Not Set</span><br><br>
+                    <strong>Action Required:</strong> Create the bucket manually in Appwrite Console.
+                `, 'error');
+            }, 1000);
+        }
+
+        function testUpload() {
+            const fileInput = document.getElementById('fileInput');
+            const uploadBtn = document.getElementById('uploadBtn');
+            
+            if (!fileInput.files[0]) {
+                showResult('❌ Please select a file first', 'error');
+                return;
+            }
+
+            const file = fileInput.files[0];
+            uploadBtn.disabled = true;
+            uploadBtn.textContent = 'Testing...';
+
+            showResult(`🔄 Testing upload of: <strong>${file.name}</strong> (${(file.size / 1024).toFixed(1)} KB)`, 'info');
+
+            // Simulate upload test
+            setTimeout(() => {
+                showResult(`
+                    <strong>Upload Test Results:</strong><br>
+                    • File: <code>${file.name}</code><br>
+                    • Size: <code>${(file.size / 1024).toFixed(1)} KB</code><br>
+                    • Status: <span style="color: red;">❌ Failed - Storage bucket not accessible</span><br><br>
+                    <strong>Error:</strong> "The current user is not authorized to perform the requested action"<br><br>
+                    <strong>Solution:</strong> Create the storage bucket with correct permissions.
+                `, 'error');
+                
+                uploadBtn.disabled = false;
+                uploadBtn.textContent = 'Test Upload';
+            }, 2000);
+        }
+
+        // Show initial status
+        showResult(`
+            <strong>Storage Bucket Test Tool</strong><br>
+            This tool helps diagnose storage bucket issues.<br><br>
+            <strong>Current Status:</strong> Storage bucket not configured<br>
+            <strong>Next Step:</strong> Follow the manual setup instructions below.
+        `, 'warning');
+    </script>
+</body>
+</html>

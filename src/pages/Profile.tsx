@@ -1,5 +1,7 @@
-import React, { useState } from 'react';
+import { useState, useRef } from 'react';
 import { motion } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
+import ClickToCopy from '../components/ClickToCopy';
 import {
   User,
   Mail,
@@ -12,22 +14,60 @@ import {
   Lock,
   Edit3,
   Check,
-  X
+  X,
+  Camera,
+  Upload,
+  Trash2,
+  MapPin,
+  Briefcase,
+  DollarSign,
+  FileText,
+  Key,
+  Eye,
+  EyeOff,
+  Monitor,
+  ArrowLeft
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import { formatCurrency, INVESTMENT_PLANS } from '../lib/appwrite';
+import { formatCurrency } from '../lib/appwrite';
 import LoadingSpinner from '../components/LoadingSpinner';
+import PasswordChangeModal from '../components/PasswordChangeModal';
+import LoginHistoryModal from '../components/LoginHistoryModal';
 
 const Profile = () => {
-  const { user, userProfile, investments, updateUserProfile } = useAuth();
+  const { user, userProfile, investments, updateUserProfile, changePassword, getLoginHistory, terminateSession, terminateAllOtherSessions } = useAuth();
+  const navigate = useNavigate();
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState({
     name: userProfile?.name || '',
-    phone: userProfile?.phone || ''
+    phone: userProfile?.phone || '',
+    firstName: userProfile?.personalInfo?.firstName || '',
+    lastName: userProfile?.personalInfo?.lastName || '',
+    dateOfBirth: userProfile?.personalInfo?.dateOfBirth || '',
+    address: userProfile?.personalInfo?.address || '',
+    city: userProfile?.personalInfo?.city || '',
+    state: userProfile?.personalInfo?.state || '',
+    zipCode: userProfile?.personalInfo?.zipCode || '',
+    country: userProfile?.personalInfo?.country || '',
+    occupation: userProfile?.personalInfo?.occupation || '',
+    annualIncome: userProfile?.personalInfo?.annualIncome || '',
+    ssn: userProfile?.personalInfo?.ssn || '',
+    idType: userProfile?.personalInfo?.idType || '',
+    secretPhrase: userProfile?.secretPhrase || ''
   });
   const [isLoading, setIsLoading] = useState(false);
+  const [profilePicture, setProfilePicture] = useState<string | File | null>(
+    userProfile?.profilePicture || localStorage.getItem(`profilePicture_${user?.$id}`) || null
+  );
+  const [isUploading, setIsUploading] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const fileInputRef = useRef(null);
+  const [showSSN, setShowSSN] = useState(false);
+  const [showSecretPhrase, setShowSecretPhrase] = useState(false);
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [showLoginHistoryModal, setShowLoginHistoryModal] = useState(false);
 
-  const handleEditChange = (e) => {
+  const handleEditChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setEditData({
       ...editData,
       [e.target.name]: e.target.value
@@ -39,7 +79,22 @@ const Profile = () => {
     try {
       const result = await updateUserProfile({
         name: editData.name,
-        phone: editData.phone
+        phone: editData.phone,
+        personalInfo: {
+          firstName: editData.firstName,
+          lastName: editData.lastName,
+          dateOfBirth: editData.dateOfBirth,
+          address: editData.address,
+          city: editData.city,
+          state: editData.state,
+          zipCode: editData.zipCode,
+          country: editData.country,
+          occupation: editData.occupation,
+          annualIncome: editData.annualIncome ? Number(editData.annualIncome) : undefined,
+          ssn: editData.ssn,
+          idType: editData.idType
+        },
+        secretPhrase: editData.secretPhrase
       });
       
       if (result.success) {
@@ -55,19 +110,114 @@ const Profile = () => {
   const handleCancel = () => {
     setEditData({
       name: userProfile?.name || '',
-      phone: userProfile?.phone || ''
+      phone: userProfile?.phone || '',
+      firstName: userProfile?.personalInfo?.firstName || '',
+      lastName: userProfile?.personalInfo?.lastName || '',
+      dateOfBirth: userProfile?.personalInfo?.dateOfBirth || '',
+      address: userProfile?.personalInfo?.address || '',
+      city: userProfile?.personalInfo?.city || '',
+      state: userProfile?.personalInfo?.state || '',
+      zipCode: userProfile?.personalInfo?.zipCode || '',
+      country: userProfile?.personalInfo?.country || '',
+      occupation: userProfile?.personalInfo?.occupation || '',
+      annualIncome: userProfile?.personalInfo?.annualIncome || '',
+      ssn: userProfile?.personalInfo?.ssn || '',
+      idType: userProfile?.personalInfo?.idType || '',
+      secretPhrase: userProfile?.secretPhrase || ''
     });
     setIsEditing(false);
   };
 
+  // Profile picture upload functions
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        alert('Please select an image file');
+        return;
+      }
+      
+      // Validate file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        alert('File size must be less than 5MB');
+        return;
+      }
+      
+      // Create preview URL
+      const url = URL.createObjectURL(file);
+      setPreviewUrl(url);
+      setProfilePicture(file);
+    }
+  };
+
+  const handleUploadPicture = async () => {
+    if (!profilePicture) return;
+    
+    setIsUploading(true);
+    try {
+      // Convert file to base64 for storage
+      const base64 = await convertToBase64(profilePicture as unknown as File);
+      
+      // Update user profile with new picture
+      const result = await updateUserProfile({
+        profilePicture: base64 as string
+      });
+      
+      if (result.success) {
+        setPreviewUrl(null);
+        // Clear the file input
+        if (fileInputRef.current) {
+          (fileInputRef.current as HTMLInputElement).value = '';
+        }
+      }
+    } catch (error) {
+      console.error('Error uploading profile picture:', error);
+      alert('Failed to upload profile picture');
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleRemovePicture = async () => {
+    setIsUploading(true);
+    try {
+      const result = await updateUserProfile({
+        profilePicture: null
+      });
+      
+      if (result.success) {
+        setProfilePicture(null);
+        setPreviewUrl(null);
+        if (fileInputRef.current) {
+          (fileInputRef.current as HTMLInputElement).value = '';
+        }
+      }
+    } catch (error) {
+      console.error('Error removing profile picture:', error);
+      alert('Failed to remove profile picture');
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const convertToBase64 = (file: File) => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = error => reject(error);
+    });
+  };
+
   // Get user's investment plan
   // Since investmentPlan is not stored in user profile, we'll show a default or calculate from investments
-  const userPlan = null; // Could be calculated from user's investments if needed
+  const userPlan: any = null; // Could be calculated from user's investments if needed
   
   // Calculate portfolio stats
   const totalInvested = investments.reduce((sum, inv) => sum + (inv.status === 'active' ? inv.amount : 0), 0);
   const activeInvestments = investments.filter(inv => inv.status === 'active').length;
-  const joinDate = userProfile?.createdAt ? new Date(userProfile.createdAt).toLocaleDateString() : 'N/A';
+  const joinDate = userProfile?.createdAt ? new Date(userProfile.createdAt).toLocaleDateString('en-US') : 'N/A';
 
   return (
     <div className="space-y-6">
@@ -78,8 +228,19 @@ const Profile = () => {
         transition={{ duration: 0.6 }}
         className=""
       >
-        <h1 className="text-2xl font-bold text-gray-900">Profile Settings</h1>
-        <p className="text-gray-600 mt-1">Manage your account information and preferences</p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Profile Settings</h1>
+            <p className="text-gray-600 mt-1">Manage your account information and preferences</p>
+          </div>
+          <button
+            onClick={() => navigate('/dashboard')}
+            className="flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors duration-200"
+          >
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Back to Dashboard
+          </button>
+        </div>
       </motion.div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -136,19 +297,94 @@ const Profile = () => {
             <div className="card-body space-y-6">
               {/* Profile Picture */}
               <div className="flex items-center space-x-6">
-                <div className="w-20 h-20 bg-gradient-to-r from-primary-500 to-primary-600 rounded-full flex items-center justify-center">
-                  <span className="text-2xl font-bold text-white">
-                    {(userProfile?.name || user?.name || 'U').charAt(0).toUpperCase()}
-                  </span>
+                <div className="relative">
+                  <div className="w-20 h-20 bg-gradient-to-r from-primary-500 to-primary-600 rounded-full flex items-center justify-center overflow-hidden">
+                    {previewUrl || (profilePicture && typeof profilePicture === 'string') ? (
+                      <img 
+                        src={previewUrl || (typeof profilePicture === 'string' ? profilePicture : '')} 
+                        alt="Profile" 
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <span className="text-2xl font-bold text-white">
+                        {(userProfile?.name || user?.name || 'U').charAt(0).toUpperCase()}
+                      </span>
+                    )}
+                  </div>
+                  
+                  {/* Upload overlay */}
+                  <div className="absolute inset-0 bg-black bg-opacity-50 rounded-full flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity duration-200">
+                    <Camera className="w-6 h-6 text-white" />
+                  </div>
                 </div>
-                <div>
+                
+                <div className="flex-1">
                   <h4 className="text-lg font-semibold text-gray-900">
                     {userProfile?.name || user?.name}
                   </h4>
                   <p className="text-sm text-gray-600">{userPlan?.name || 'Investment Plan'}</p>
-                  <button className="text-sm text-primary-600 hover:text-primary-700 mt-1">
-                    Change Photo
-                  </button>
+                  
+                  <div className="flex items-center space-x-3 mt-2">
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/*"
+                      onChange={handleFileSelect}
+                      className="hidden"
+                    />
+                    
+                    <button 
+                        onClick={() => (fileInputRef.current as unknown as HTMLInputElement)?.click()}
+                      className="text-sm text-primary-600 hover:text-primary-700 flex items-center"
+                    >
+                      <Upload className="w-4 h-4 mr-1" />
+                      {previewUrl ? 'Change Photo' : 'Upload Photo'}
+                    </button>
+                    
+                    {(previewUrl || profilePicture) && (
+                      <button 
+                        onClick={handleRemovePicture}
+                        disabled={isUploading}
+                        className="text-sm text-red-600 hover:text-red-700 flex items-center disabled:opacity-50"
+                      >
+                        <Trash2 className="w-4 h-4 mr-1" />
+                        Remove
+                      </button>
+                    )}
+                  </div>
+                  
+                  {/* Upload/Remove buttons */}
+                  {previewUrl && (
+                    <div className="flex items-center space-x-2 mt-2">
+                      <button
+                        onClick={handleUploadPicture}
+                        disabled={isUploading}
+                        className="btn-primary px-3 py-1 text-xs disabled:opacity-50"
+                      >
+                        {isUploading ? (
+                          <LoadingSpinner size="sm" />
+                        ) : (
+                          <>
+                            <Check className="w-3 h-3 mr-1" />
+                            Save
+                          </>
+                        )}
+                      </button>
+                      <button
+                        onClick={() => {
+                          setPreviewUrl(null);
+                          setProfilePicture(userProfile?.profilePicture || null);
+                          if (fileInputRef.current) {
+                            (fileInputRef.current as HTMLInputElement).value = '';
+                          }
+                        }}
+                        className="btn-secondary px-3 py-1 text-xs"
+                      >
+                        <X className="w-3 h-3 mr-1" />
+                        Cancel
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -184,19 +420,19 @@ const Profile = () => {
                       placeholder="Enter your phone number"
                     />
                   ) : (
-                    <div className="form-input bg-gray-50 flex items-center">
+                    <ClickToCopy text={userProfile?.phone || ''} className="form-input bg-gray-50 flex items-center">
                       <Mail className="w-4 h-4 text-gray-400 mr-3" />
-                      {userProfile?.phone || 'Not provided'}
-                    </div>
+                      <span>{userProfile?.phone || 'Not provided'}</span>
+                    </ClickToCopy>
                   )}
                 </div>
 
                 <div>
                   <label className="form-label">Email Address</label>
-                  <div className="form-input bg-gray-50 flex items-center">
+                  <ClickToCopy text={user?.email || ''} className="form-input bg-gray-50 flex items-center">
                     <Mail className="w-4 h-4 text-gray-400 mr-3" />
-                    {user?.email || 'Not provided'}
-                  </div>
+                    <span>{user?.email || 'Not provided'}</span>
+                  </ClickToCopy>
                   <p className="text-xs text-gray-500 mt-1">Email cannot be changed</p>
                 </div>
 
@@ -249,6 +485,320 @@ const Profile = () => {
                   </div>
                 </div>
               </div>
+
+              {/* Additional Personal Information */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                <div>
+                  <label className="form-label">First Name</label>
+                  {isEditing ? (
+                    <input
+                      name="firstName"
+                      type="text"
+                      className="form-input"
+                      value={editData.firstName}
+                      onChange={handleEditChange}
+                      placeholder="Enter your first name"
+                    />
+                  ) : (
+                    <div className="form-input bg-gray-50 flex items-center">
+                      <User className="w-4 h-4 text-gray-400 mr-3" />
+                      {userProfile?.personalInfo?.firstName || 'Not provided'}
+                    </div>
+                  )}
+                </div>
+
+                <div>
+                  <label className="form-label">Last Name</label>
+                  {isEditing ? (
+                    <input
+                      name="lastName"
+                      type="text"
+                      className="form-input"
+                      value={editData.lastName}
+                      onChange={handleEditChange}
+                      placeholder="Enter your last name"
+                    />
+                  ) : (
+                    <div className="form-input bg-gray-50 flex items-center">
+                      <User className="w-4 h-4 text-gray-400 mr-3" />
+                      {userProfile?.personalInfo?.lastName || 'Not provided'}
+                    </div>
+                  )}
+                </div>
+
+                <div>
+                  <label className="form-label">Date of Birth</label>
+                  {isEditing ? (
+                    <input
+                      name="dateOfBirth"
+                      type="date"
+                      className="form-input"
+                      value={editData.dateOfBirth}
+                      onChange={handleEditChange}
+                    />
+                  ) : (
+                    <div className="form-input bg-gray-50 flex items-center">
+                      <Calendar className="w-4 h-4 text-gray-400 mr-3" />
+                      {userProfile?.personalInfo?.dateOfBirth || 'Not provided'}
+                    </div>
+                  )}
+                </div>
+
+                <div>
+                  <label className="form-label">Occupation</label>
+                  {isEditing ? (
+                    <input
+                      name="occupation"
+                      type="text"
+                      className="form-input"
+                      value={editData.occupation}
+                      onChange={handleEditChange}
+                      placeholder="Enter your occupation"
+                    />
+                  ) : (
+                    <div className="form-input bg-gray-50 flex items-center">
+                      <Briefcase className="w-4 h-4 text-gray-400 mr-3" />
+                      {userProfile?.personalInfo?.occupation || 'Not provided'}
+                    </div>
+                  )}
+                </div>
+
+                <div>
+                  <label className="form-label">Annual Income</label>
+                  {isEditing ? (
+                    <input
+                      name="annualIncome"
+                      type="number"
+                      className="form-input"
+                      value={editData.annualIncome}
+                      onChange={handleEditChange}
+                      placeholder="Enter your annual income"
+                    />
+                  ) : (
+                    <div className="form-input bg-gray-50 flex items-center">
+                      <DollarSign className="w-4 h-4 text-gray-400 mr-3" />
+                      {userProfile?.personalInfo?.annualIncome ? 
+                        formatCurrency(userProfile.personalInfo.annualIncome) : 'Not provided'}
+                    </div>
+                  )}
+                </div>
+
+                <div>
+                  <label className="form-label">Address</label>
+                  {isEditing ? (
+                    <input
+                      name="address"
+                      type="text"
+                      className="form-input"
+                      value={editData.address}
+                      onChange={handleEditChange}
+                      placeholder="Enter your address"
+                    />
+                  ) : (
+                    <div className="form-input bg-gray-50 flex items-center">
+                      <MapPin className="w-4 h-4 text-gray-400 mr-3" />
+                      {userProfile?.personalInfo?.address || 'Not provided'}
+                    </div>
+                  )}
+                </div>
+
+                <div>
+                  <label className="form-label">City</label>
+                  {isEditing ? (
+                    <input
+                      name="city"
+                      type="text"
+                      className="form-input"
+                      value={editData.city}
+                      onChange={handleEditChange}
+                      placeholder="Enter your city"
+                    />
+                  ) : (
+                    <div className="form-input bg-gray-50 flex items-center">
+                      <MapPin className="w-4 h-4 text-gray-400 mr-3" />
+                      {userProfile?.personalInfo?.city || 'Not provided'}
+                    </div>
+                  )}
+                </div>
+
+                <div>
+                  <label className="form-label">State</label>
+                  {isEditing ? (
+                    <input
+                      name="state"
+                      type="text"
+                      className="form-input"
+                      value={editData.state}
+                      onChange={handleEditChange}
+                      placeholder="Enter your state"
+                    />
+                  ) : (
+                    <div className="form-input bg-gray-50 flex items-center">
+                      <MapPin className="w-4 h-4 text-gray-400 mr-3" />
+                      {userProfile?.personalInfo?.state || 'Not provided'}
+                    </div>
+                  )}
+                </div>
+
+                <div>
+                  <label className="form-label">ZIP Code</label>
+                  {isEditing ? (
+                    <input
+                      name="zipCode"
+                      type="text"
+                      className="form-input"
+                      value={editData.zipCode}
+                      onChange={handleEditChange}
+                      placeholder="Enter your ZIP code"
+                    />
+                  ) : (
+                    <div className="form-input bg-gray-50 flex items-center">
+                      <Hash className="w-4 h-4 text-gray-400 mr-3" />
+                      {userProfile?.personalInfo?.zipCode || 'Not provided'}
+                    </div>
+                  )}
+                </div>
+
+                <div>
+                  <label className="form-label">Country</label>
+                  {isEditing ? (
+                    <select
+                      name="country"
+                      className="form-input"
+                      value={editData.country}
+                      onChange={handleEditChange}
+                    >
+                      <option value="">Select country</option>
+                      <option value="US">United States</option>
+                      <option value="CA">Canada</option>
+                      <option value="UK">United Kingdom</option>
+                      <option value="AU">Australia</option>
+                      <option value="DE">Germany</option>
+                      <option value="FR">France</option>
+                      <option value="IT">Italy</option>
+                      <option value="ES">Spain</option>
+                      <option value="NL">Netherlands</option>
+                      <option value="SE">Sweden</option>
+                      <option value="NO">Norway</option>
+                      <option value="DK">Denmark</option>
+                      <option value="FI">Finland</option>
+                      <option value="CH">Switzerland</option>
+                      <option value="AT">Austria</option>
+                      <option value="BE">Belgium</option>
+                      <option value="IE">Ireland</option>
+                      <option value="PT">Portugal</option>
+                      <option value="GR">Greece</option>
+                      <option value="LU">Luxembourg</option>
+                      <option value="MT">Malta</option>
+                      <option value="CY">Cyprus</option>
+                      <option value="EE">Estonia</option>
+                      <option value="LV">Latvia</option>
+                      <option value="LT">Lithuania</option>
+                      <option value="PL">Poland</option>
+                      <option value="CZ">Czech Republic</option>
+                      <option value="SK">Slovakia</option>
+                      <option value="SI">Slovenia</option>
+                      <option value="HU">Hungary</option>
+                      <option value="RO">Romania</option>
+                      <option value="BG">Bulgaria</option>
+                      <option value="HR">Croatia</option>
+                      <option value="Other">Other</option>
+                    </select>
+                  ) : (
+                    <div className="form-input bg-gray-50 flex items-center">
+                      <MapPin className="w-4 h-4 text-gray-400 mr-3" />
+                      {userProfile?.personalInfo?.country || 'Not provided'}
+                    </div>
+                  )}
+                </div>
+
+                <div>
+                  <label className="form-label">Social Security Number</label>
+                  {isEditing ? (
+                    <div className="relative">
+                      <input
+                        name="ssn"
+                        type={showSSN ? 'text' : 'password'}
+                        className="form-input pr-10"
+                        value={editData.ssn}
+                        onChange={handleEditChange}
+                        placeholder="XXX-XX-XXXX"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowSSN(!showSSN)}
+                        className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                      >
+                        {showSSN ? (
+                          <EyeOff className="h-4 w-4 text-gray-400" />
+                        ) : (
+                          <Eye className="h-4 w-4 text-gray-400" />
+                        )}
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="form-input bg-gray-50 flex items-center">
+                      <Shield className="w-4 h-4 text-gray-400 mr-3" />
+                      {userProfile?.personalInfo?.ssn ? '•••-••-••••' : 'Not provided'}
+                    </div>
+                  )}
+                </div>
+
+                <div>
+                  <label className="form-label">ID Type</label>
+                  {isEditing ? (
+                    <select
+                      name="idType"
+                      className="form-input"
+                      value={editData.idType}
+                      onChange={handleEditChange}
+                    >
+                      <option value="">Select ID type</option>
+                      <option value="drivers-license">Driver's License</option>
+                      <option value="passport">Passport</option>
+                      <option value="state-id">State ID</option>
+                      <option value="national-id">National ID</option>
+                    </select>
+                  ) : (
+                    <div className="form-input bg-gray-50 flex items-center">
+                      <FileText className="w-4 h-4 text-gray-400 mr-3" />
+                      {userProfile?.personalInfo?.idType || 'Not provided'}
+                    </div>
+                  )}
+                </div>
+
+                <div>
+                  <label className="form-label">Secret Phrase</label>
+                  {isEditing ? (
+                    <div className="relative">
+                      <input
+                        name="secretPhrase"
+                        type={showSecretPhrase ? 'text' : 'password'}
+                        className="form-input pr-10"
+                        value={editData.secretPhrase}
+                        onChange={handleEditChange}
+                        placeholder="Enter your secret phrase"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowSecretPhrase(!showSecretPhrase)}
+                        className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                      >
+                        {showSecretPhrase ? (
+                          <EyeOff className="h-4 w-4 text-gray-400" />
+                        ) : (
+                          <Eye className="h-4 w-4 text-gray-400" />
+                        )}
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="form-input bg-gray-50 flex items-center">
+                      <Key className="w-4 h-4 text-gray-400 mr-3" />
+                      {userProfile?.secretPhrase ? '••••••' : 'Not provided'}
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
         </motion.div>
@@ -284,7 +834,7 @@ const Profile = () => {
                     <p className="text-sm text-gray-600">Annual Interest Rate</p>
                   </div>
                   <div className="space-y-3">
-                    {userPlan.features.map((feature, index) => (
+                    {userPlan.features.map((feature: any, index: number) => (
                       <div key={index} className="flex items-center text-sm text-gray-600">
                         <div className="w-1.5 h-1.5 bg-success-500 rounded-full mr-3"></div>
                         {feature}
@@ -355,12 +905,26 @@ const Profile = () => {
             </div>
           </div>
           <div className="card-body space-y-4">
-            <button className="w-full flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors duration-200">
+            <button 
+              onClick={() => setShowPasswordModal(true)}
+              className="w-full flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors duration-200"
+            >
               <div className="flex items-center space-x-3">
                 <Lock className="w-5 h-5 text-gray-400" />
                 <span className="text-sm font-medium text-gray-900">Change Password</span>
               </div>
               <span className="text-sm text-gray-400">Update</span>
+            </button>
+            
+            <button 
+              onClick={() => setShowLoginHistoryModal(true)}
+              className="w-full flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors duration-200"
+            >
+              <div className="flex items-center space-x-3">
+                <Monitor className="w-5 h-5 text-gray-400" />
+                <span className="text-sm font-medium text-gray-900">Login History</span>
+              </div>
+              <span className="text-sm text-gray-400">View</span>
             </button>
             
             <button className="w-full flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors duration-200">
@@ -458,8 +1022,25 @@ const Profile = () => {
           </div>
         </div>
       </motion.div>
+
+      {/* Password Change Modal */}
+      <PasswordChangeModal
+        isOpen={showPasswordModal}
+        onClose={() => setShowPasswordModal(false)}
+        onChangePassword={changePassword}
+      />
+
+      {/* Login History Modal */}
+      <LoginHistoryModal
+        isOpen={showLoginHistoryModal}
+        onClose={() => setShowLoginHistoryModal(false)}
+        onGetLoginHistory={getLoginHistory}
+        onTerminateSession={terminateSession}
+        onTerminateAllOtherSessions={terminateAllOtherSessions}
+      />
     </div>
   );
 };
 
 export default Profile;
+

@@ -20,9 +20,9 @@ interface NotificationProviderProps {
 
 export const NotificationProvider: React.FC<NotificationProviderProps> = ({ children }) => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
-  const { user } = useAuth();
+  const { user, userProfile } = useAuth();
 
-  const unreadCount = notifications.filter(n => n.isRead !== 'true').length;
+  const unreadCount = notifications.filter(n => n.isRead !== 'true' && n.isRead !== true).length;
 
   useEffect(() => {
     if (user) {
@@ -39,6 +39,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
     if (!user) return;
 
     try {
+      console.log('Fetching notifications for user:', user.$id);
       const response = await databases.listDocuments(
         DATABASE_ID,
         COLLECTIONS.NOTIFICATIONS,
@@ -48,7 +49,9 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
           Query.limit(50)
         ]
       );
-      setNotifications(response.documents as Notification[]);
+      
+      console.log('Fetched notifications:', response.documents);
+      setNotifications(response.documents as unknown as Notification[]);
     } catch (error) {
       console.error('Error fetching notifications:', error);
     }
@@ -67,15 +70,10 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
           userId: user.$id,
           isRead: 'false',
           createdAt: new Date().toISOString()
-        },
-        [
-          `read("user:${user.$id}")`,
-          `update("user:${user.$id}")`,
-          `delete("user:${user.$id}")`
-        ]
+        }
       );
 
-      setNotifications(prev => [notification as Notification, ...prev]);
+      setNotifications(prev => [notification as unknown as Notification, ...prev]);
     } catch (error) {
       console.error('Error creating notification:', error);
     }
@@ -96,7 +94,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
       setNotifications(prev =>
         prev.map(notification =>
           notification.$id === notificationId
-            ? { ...notification, isRead: 'true' }
+            ? { ...notification, isRead: 'true' as boolean | string }
             : notification
         )
       );
@@ -109,7 +107,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
     if (!user) return;
 
     try {
-      const unreadNotifications = notifications.filter(n => n.isRead !== 'true');
+      const unreadNotifications = notifications.filter(n => n.isRead !== 'true' && n.isRead !== true);
       
       // Update all unread notifications in parallel
       await Promise.all(
@@ -127,7 +125,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
       );
 
       setNotifications(prev =>
-        prev.map(notification => ({ ...notification, isRead: 'true' }))
+        prev.map(notification => ({ ...notification, isRead: 'true' as boolean | string }))
       );
     } catch (error) {
       console.error('Error marking all notifications as read:', error);

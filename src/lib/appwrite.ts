@@ -1,4 +1,4 @@
-import { Client, Account, Databases, ID } from 'appwrite';
+import { Client, Account, Databases, Storage, ID } from 'appwrite';
 import appwriteConfig from '../../appwrite.config.json';
 import type { InvestmentPlan } from '../types/appwrite';
 
@@ -12,6 +12,7 @@ const client = new Client()
 // Initialize services
 export const account = new Account(client);
 export const databases = new Databases(client);
+export const storage = new Storage(client);
 export { ID };
 
 // Database configuration (env overrides with sensible defaults that match setup-database.sh)
@@ -21,7 +22,10 @@ export const COLLECTIONS = {
   INVESTMENTS: import.meta.env.VITE_APPWRITE_INVESTMENTS_COLLECTION_ID || 'investments',
   TRANSACTIONS: import.meta.env.VITE_APPWRITE_TRANSACTIONS_COLLECTION_ID || 'transactions',
   INTEREST_PAYMENTS: import.meta.env.VITE_APPWRITE_INTEREST_PAYMENTS_COLLECTION_ID || 'interest-payments',
-  NOTIFICATIONS: import.meta.env.VITE_APPWRITE_NOTIFICATIONS_COLLECTION_ID || 'notifications'
+  NOTIFICATIONS: import.meta.env.VITE_APPWRITE_NOTIFICATIONS_COLLECTION_ID || 'notifications',
+  PAYMENT_METHODS: import.meta.env.VITE_APPWRITE_PAYMENT_METHODS_COLLECTION_ID || 'payment-methods',
+  BONUS_CODES: import.meta.env.VITE_APPWRITE_BONUS_CODES_COLLECTION_ID || 'bonus-codes',
+  TRANSFERS: import.meta.env.VITE_APPWRITE_TRANSFERS_COLLECTION_ID || 'transfers'
 };
 
 // Investment plans configuration

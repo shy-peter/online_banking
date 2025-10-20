@@ -6,6 +6,9 @@ import {
   TrendingUp,
   DollarSign,
   User,
+  Settings,
+  Shield,
+  FileText,
   LogOut,
   Menu,
   X
@@ -16,6 +19,9 @@ const Sidebar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const { logout, userProfile } = useAuth();
   const location = useLocation();
+
+  // Check if user is admin
+  const isAdmin = userProfile?.email?.includes('admin') || userProfile?.name?.includes('Admin');
 
   const navigation = [
     {
@@ -38,7 +44,26 @@ const Sidebar = () => {
       href: '/profile',
       icon: User,
     },
+    {
+      name: 'Settings',
+      href: '/settings',
+      icon: Settings,
+    },
   ];
+
+  // Add admin navigation if user is admin
+  if (isAdmin) {
+    navigation.push({
+      name: 'Admin',
+      href: '/admin',
+      icon: Shield,
+    });
+    navigation.push({
+      name: 'Admin Transactions',
+      href: '/admin/transactions',
+      icon: FileText,
+    });
+  }
 
   const handleLogout = async () => {
     await logout();

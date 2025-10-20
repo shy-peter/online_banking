@@ -6,10 +6,16 @@ import Layout from './components/Layout';
 import Landing from './pages/Landing';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import EnhancedSignup from './pages/EnhancedSignup';
 import Dashboard from './pages/Dashboard';
 import Investments from './pages/Investments';
 import Transactions from './pages/Transactions';
 import Profile from './pages/Profile';
+import Settings from './pages/Settings';
+import AdminDashboard from './pages/AdminDashboard';
+import AdminTransactions from './pages/AdminTransactions';
+import AdminPaymentMethods from './pages/AdminPaymentMethods';
+import AdminPaymentMethodTypes from './pages/AdminPaymentMethodTypes';
 import LoadingSpinner from './components/LoadingSpinner';
 
 const App: React.FC = () => {
@@ -58,6 +64,7 @@ const App: React.FC = () => {
               <Route path="/" element={<Landing />} />
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
+              <Route path="/signup" element={<EnhancedSignup />} />
               <Route path="*" element={<Navigate to="/" replace />} />
             </>
           ) : (
@@ -68,6 +75,11 @@ const App: React.FC = () => {
               <Route path="investments" element={<Investments />} />
               <Route path="transactions" element={<Transactions />} />
               <Route path="profile" element={<Profile />} />
+              <Route path="settings" element={<Settings />} />
+              <Route path="admin" element={<AdminDashboard />} />
+              <Route path="admin/transactions" element={<AdminTransactions />} />
+              <Route path="admin/payment-methods" element={<AdminPaymentMethods />} />
+              <Route path="admin/payment-method-types" element={<AdminPaymentMethodTypes />} />
               <Route path="*" element={<Navigate to="/dashboard" replace />} />
             </Route>
           )}

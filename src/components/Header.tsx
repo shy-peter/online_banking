@@ -1,5 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 import { Search, Settings } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { formatCurrency } from '../lib/appwrite';
@@ -7,6 +8,7 @@ import NotificationDropdown from './NotificationDropdown';
 
 const Header = () => {
   const { userProfile, investments } = useAuth();
+  const navigate = useNavigate();
 
   // Calculate total portfolio value
   const totalPortfolioValue = investments.reduce((sum, investment) => {
@@ -58,19 +60,33 @@ const Header = () => {
           <NotificationDropdown />
 
           {/* Settings */}
-          <button className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
+          <button 
+            onClick={() => navigate('/settings')}
+            className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+          >
             <Settings className="h-5 w-5" />
           </button>
 
           {/* User avatar */}
           {userProfile && (
-            <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-primary-600 rounded-full flex items-center justify-center">
-                <span className="text-xs font-semibold text-white">
-                  {userProfile.name?.charAt(0).toUpperCase()}
-                </span>
+            <button 
+              onClick={() => navigate('/profile')}
+              className="flex items-center space-x-3 p-1 hover:bg-gray-100 rounded-lg transition-colors duration-200"
+            >
+              <div className="w-8 h-8 bg-primary-600 rounded-full flex items-center justify-center overflow-hidden">
+                {userProfile.profilePicture || localStorage.getItem(`profilePicture_${userProfile.userId}`) ? (
+                  <img 
+                    src={userProfile.profilePicture || localStorage.getItem(`profilePicture_${userProfile.userId}`)} 
+                    alt="Profile" 
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <span className="text-xs font-semibold text-white">
+                    {userProfile.name?.charAt(0).toUpperCase()}
+                  </span>
+                )}
               </div>
-            </div>
+            </button>
           )}
         </div>
       </div>
