@@ -331,7 +331,7 @@ const Landing: React.FC = () => {
                   <Lock className="w-6 h-6 text-green-600" />
                 </div>
                 <div>
-                  <h3 className="text-xl font-bold text-gray-900 mb-2">Bank-Grade Security</h3>
+                  <h3 className="text-xl font-bold text-gray-900 mb-2">Bank-Grade Security standardsg</h3>
                   <p className="text-gray-600">Your money and data are protected with military-grade encryption and fraud monitoring.</p>
                 </div>
               </div>
