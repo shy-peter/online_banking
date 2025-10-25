@@ -8,7 +8,7 @@
   }
   
   body {
-    @apply bg-gray-50 text-gray-900 antialiased;
+    @apply bg-black text-white antialiased;
     font-feature-settings: 'cv11', 'ss01';
     font-variation-settings: 'opsz' 32;
   }
@@ -65,11 +65,11 @@
   }
   
   .btn-primary {
-    @apply btn bg-primary-600 text-white hover:bg-primary-700 focus:ring-primary-500 shadow-soft;
+    @apply btn bg-[#d8ed36] text-black hover:bg-[#c4d630] focus:ring-[#d8ed36] shadow-soft;
   }
   
   .btn-secondary {
-    @apply btn bg-white text-gray-900 border border-gray-300 hover:bg-gray-50 focus:ring-primary-500 shadow-soft;
+    @apply btn bg-gray-800 text-white border border-gray-700 hover:bg-gray-700 focus:ring-[#d8ed36] shadow-soft;
   }
   
   .btn-success {
@@ -81,11 +81,11 @@
   }
   
   .card {
-    @apply bg-white rounded-xl border border-gray-200 shadow-soft;
+    @apply bg-gray-900 rounded-xl border border-gray-800 shadow-soft;
   }
   
   .card-header {
-    @apply px-6 py-4 border-b border-gray-200;
+    @apply px-6 py-4 border-b border-gray-800;
   }
   
   .card-body {
@@ -93,11 +93,11 @@
   }
   
   .form-input {
-    @apply block w-full rounded-lg border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm transition-colors duration-200;
+    @apply block w-full rounded-lg border-gray-700 bg-gray-800 text-white shadow-sm focus:border-[#d8ed36] focus:ring-[#d8ed36] sm:text-sm transition-colors duration-200;
   }
   
   .input-field {
-    @apply border-0 bg-gray-50 text-base box-border w-full text-sm leading-none h-12 outline-0 placeholder:font-normal placeholder:text-gray-400 px-3 py-2 rounded-lg transition-colors duration-200;
+    @apply border-0 bg-gray-800 text-white text-base box-border w-full text-sm leading-none h-12 outline-0 placeholder:font-normal placeholder:text-gray-400 px-3 py-2 rounded-lg transition-colors duration-200;
   }
   
   .input-field:focus {

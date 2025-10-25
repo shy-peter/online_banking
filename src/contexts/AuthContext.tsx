@@ -130,11 +130,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // Helper function to fetch user profile for login status checking
   const fetchUserProfileForLogin = async (userId: string): Promise<UserProfile> => {
     try {
+      console.log('Looking for user profile with userId:', userId);
       const response = await databases.listDocuments(
         DATABASE_ID,
         COLLECTIONS.USERS,
         [Query.equal('userId', userId)]
       );
+      
+      console.log('Found documents:', response.documents.length);
+      console.log('All documents in users collection:', response.documents);
       
       if (response.documents.length > 0) {
         const profile = response.documents[0];
@@ -165,6 +169,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             console.error('Error parsing preferences JSON:', error);
             profile.preferences = {};
           }
+        }
+        
+        // Handle missing isVerified field for existing users
+        if (profile.isVerified === undefined) {
+          // If user has active status, assume they were verified before this field was added
+          profile.isVerified = profile.status === 'active';
         }
         
         return profile as UserProfile;
@@ -288,41 +298,65 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       } catch (error) {
         // Ignore deletion errors
       }
-    } catch (error) {
+    } catch (error: any) {
       // No active session; nothing to clear
+      // This is expected during signup when no session exists yet
+      if (error.code !== 401) {
+        console.warn('Unexpected error in clearExistingSession:', error);
+      }
     }
   };
 
   const login = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
     setLoading(true);
     try {
+      console.log('Attempting login for email:', email);
       await clearExistingSession();
       await account.createEmailSession(email, password);
       
-      // Get the user session to get the user ID
-      const session = await account.get();
+      // Get the current user to get the user ID
+      const user = await account.get();
+      console.log('Current user object:', user);
+      console.log('User ID:', user.$id);
       
       // Fetch user profile to check status
-      const userProfile = await fetchUserProfileForLogin(session.$id);
+      const userProfile = await fetchUserProfileForLogin(user.$id);
+      console.log('User profile status:', userProfile.status, 'Email verified:', userProfile.isVerified);
       
-      // Check if user account is active
+      // Check if user account is suspended
       if (userProfile.status === 'suspended') {
         await account.deleteSession('current');
         toast.error('Your account has been suspended. Please contact support.');
         return { success: false, error: 'Account suspended' };
       }
       
+      // Check if user account is inactive
       if (userProfile.status === 'inactive') {
         await account.deleteSession('current');
         toast.error('Your account is inactive. Please contact support.');
         return { success: false, error: 'Account inactive' };
       }
       
-      // If account is active, proceed with normal login
+      // Check if email is not verified
+      // Allow login if user has an active status even if emailVerified is false (for existing users)
+      if (userProfile.status === 'pending_verification') {
+        await account.deleteSession('current');
+        toast.error('Please verify your email address before logging in. Check your inbox for a verification email.');
+        return { success: false, error: 'Email not verified' };
+      }
+      
+      // For users with active status but isVerified false, we'll allow login but show a warning
+      if (userProfile.status === 'active' && !userProfile.isVerified) {
+        console.log('User has active status but isVerified is false - allowing login with warning');
+        toast.error('Your email verification status is unclear. Please verify your email in your profile settings.');
+      }
+      
+      // If account is active and verified, proceed with normal login
       await checkUser();
       toast.success('Successfully logged in!');
       return { success: true };
     } catch (error) {
+      console.error('Login error:', error);
       const errorMessage = error.message || 'Login failed';
       toast.error(errorMessage);
       return { success: false, error: errorMessage };
@@ -336,32 +370,37 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       await clearExistingSession();
       
-      // Create user account
+      // Create user account with email verification
       const newUser = await account.create(ID.unique(), email, password, name);
       
-      // Create session
-      await account.createEmailSession(email, password);
-      // Ensure session is active before making database calls
-      await account.get();
+      // Send email verification
+      await account.createVerification(`${window.location.origin}/verify-email`);
       
       // Generate unique account number
       const accountNumber = generateAccountNumber();
       
-      // Create user profile in database
+      // Create user profile in database with pending verification status
+      const userProfileData = {
+        userId: newUser.$id,
+        name: name,
+        email: email,
+        accountNumber: accountNumber,
+        totalBalance: 0,
+        availableBalance: 0,
+        status: 'pending_verification' as const,
+        isVerified: false,
+        verificationStatus: 'pending' as const,
+        createdAt: new Date().toISOString()
+      };
+      
+      console.log('Creating user profile (register) with data:', userProfileData);
+      console.log('User ID for profile creation (register):', newUser.$id);
+      
       const userProfile = await databases.createDocument(
         DATABASE_ID,
         COLLECTIONS.USERS,
         ID.unique(),
-        {
-          userId: newUser.$id,
-          name: name,
-          email: email,
-          accountNumber: accountNumber,
-          totalBalance: 0,
-          availableBalance: 0,
-          status: 'active' as const,
-          createdAt: new Date().toISOString()
-        },
+        userProfileData,
         [
           `read("user:${newUser.$id}")`,
           `update("user:${newUser.$id}")`,
@@ -369,28 +408,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         ]
       );
       
-      // Create welcome transaction
-      await databases.createDocument(
-        DATABASE_ID,
-        COLLECTIONS.TRANSACTIONS,
-        ID.unique(),
-        {
-          userId: newUser.$id,
-          type: 'account_created' as const,
-          amount: 0,
-          description: 'Account created successfully',
-          status: 'completed' as const,
-          reference: `ACC-${accountNumber}`
-        },
-        [
-          `read("user:${newUser.$id}")`,
-          `update("user:${newUser.$id}")`,
-          `delete("user:${newUser.$id}")`
-        ]
-      );
+      console.log('User profile created successfully (register):', userProfile);
       
-      await checkUser();
-      toast.success(`Account created successfully! Your account number is: ${accountNumber}`);
+      toast.success('Account created! Please check your email to verify your account.');
       return { success: true };
     } catch (error) {
       const errorMessage = error.message || 'Registration failed';
@@ -434,15 +454,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   ): Promise<{ success: boolean; error?: string }> => {
     setLoading(true);
     try {
+      // Clear any existing session before creating a new account
       await clearExistingSession();
       
       // Create user account
       const newUser = await account.create(ID.unique(), email, password, name);
       
-      // Create session
+      // Create a session to enable verification email sending
       await account.createEmailSession(email, password);
-      // Ensure session is active before making database calls
-      await account.get();
+      
+      // Send email verification
+      await account.createVerification(`${window.location.origin}/verify-email`);
       
       // Generate unique account number
       const accountNumber = generateAccountNumber();
@@ -455,25 +477,27 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         accountNumber: accountNumber,
         totalBalance: 0,
         availableBalance: 0,
-        status: 'active' as const,
+        status: 'pending_verification' as const,
+        isVerified: false,                    // ✅ Now available
+        verificationStatus: 'pending' as const, // ✅ Now available
         createdAt: new Date().toISOString()
       };
 
-      // Add additional data if provided
+      // Add additional data if provided (only fields that exist in database schema)
       if (additionalData) {
         if (additionalData.phone) {
           userProfileData.phone = additionalData.phone;
         }
         if (additionalData.secretPhrase) {
-          userProfileData.secretPhrase = additionalData.secretPhrase;
+          userProfileData.secretPhrase = additionalData.secretPhrase; // ✅ Now available
         }
-        if (additionalData.documents) {
-          userProfileData.documents = JSON.stringify(additionalData.documents);
-        }
-        if (additionalData.personalInfo) {
-          userProfileData.personalInfo = JSON.stringify(additionalData.personalInfo);
-        }
+        // Note: documents and personalInfo fields reached collection limit
+        // These may need to be stored in separate collections or handled differently
       }
+      
+      // Debug: Log the data being sent
+      console.log('Creating user profile with data:', userProfileData);
+      console.log('User ID for profile creation:', newUser.$id);
       
       // Create user profile in database
       const userProfile = await databases.createDocument(
@@ -488,35 +512,140 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         ]
       );
       
-      // Create welcome transaction
-      await databases.createDocument(
-        DATABASE_ID,
-        COLLECTIONS.TRANSACTIONS,
-        ID.unique(),
-        {
-          userId: newUser.$id,
-          type: 'account_created' as const,
-          amount: 0,
-          description: 'Account created successfully with enhanced security',
-          status: 'completed' as const,
-          reference: `ACC-${accountNumber}`
-        },
-        [
-          `read("user:${newUser.$id}")`,
-          `update("user:${newUser.$id}")`,
-          `delete("user:${newUser.$id}")`
-        ]
-      );
+      console.log('User profile created successfully:', userProfile);
       
-      await checkUser();
-      toast.success(`Account created successfully! Your account number is: ${accountNumber}`);
+      // Clean up the temporary session - user should verify email before logging in
+      try {
+        await account.deleteSession('current');
+      } catch (error) {
+        // Ignore cleanup errors
+      }
+      
+      toast.success('Account created! Please check your email to verify your account.');
       return { success: true };
-    } catch (error) {
+    } catch (error: any) {
+      console.error('Enhanced signup error details:', error);
+      console.error('Error code:', error.code);
+      console.error('Error message:', error.message);
+      console.error('Error type:', error.type);
+      
       const errorMessage = error.message || 'Registration failed';
       toast.error(errorMessage);
       return { success: false, error: errorMessage };
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Email verification functions
+  const verifyEmail = async (userId: string, secret: string): Promise<{ success: boolean; error?: string }> => {
+    try {
+      await account.updateVerification(userId, secret);
+      
+      // Update user profile to mark email as verified and status as active
+      const userResponse = await databases.listDocuments(
+        DATABASE_ID,
+        COLLECTIONS.USERS,
+        [Query.equal('userId', userId)]
+      );
+      
+      if (userResponse.documents.length > 0) {
+        const userProfile = userResponse.documents[0];
+        await databases.updateDocument(
+          DATABASE_ID,
+          COLLECTIONS.USERS,
+          userProfile.$id,
+          {
+            isVerified: true,
+            verificationStatus: 'verified' as const,
+            status: 'active' as const,
+            updatedAt: new Date().toISOString()
+          }
+        );
+      }
+      
+      toast.success('Email verified successfully!');
+      return { success: true };
+    } catch (error: any) {
+      const errorMessage = error.message || 'Email verification failed';
+      toast.error(errorMessage);
+      return { success: false, error: errorMessage };
+    }
+  };
+
+  const resendVerificationEmail = async (): Promise<{ success: boolean; error?: string }> => {
+    try {
+      await account.createVerification(`${window.location.origin}/verify-email`);
+      toast.success('Verification email sent! Please check your inbox.');
+      return { success: true };
+    } catch (error: any) {
+      const errorMessage = error.message || 'Failed to send verification email';
+      toast.error(errorMessage);
+      return { success: false, error: errorMessage };
+    }
+  };
+
+  // Password recovery functions
+  const sendPasswordRecoveryEmail = async (email: string): Promise<{ success: boolean; error?: string }> => {
+    try {
+      await account.createRecovery(email, `${window.location.origin}/reset-password`);
+      toast.success('Password recovery email sent! Please check your inbox.');
+      return { success: true };
+    } catch (error: any) {
+      const errorMessage = error.message || 'Failed to send recovery email';
+      toast.error(errorMessage);
+      return { success: false, error: errorMessage };
+    }
+  };
+
+  const resetPassword = async (userId: string, secret: string, newPassword: string): Promise<{ success: boolean; error?: string }> => {
+    try {
+      console.log('Resetting password for user:', userId);
+      console.log('Using secret:', secret ? 'provided' : 'missing');
+      
+      // Clear any existing sessions first
+      await clearExistingSession();
+      
+      // Reset the password
+      const result = await account.updateRecovery(userId, secret, newPassword, newPassword);
+      console.log('Password reset result:', result);
+      
+      // Ensure the user's email verification status is maintained
+      // Get the user profile to check current status
+      const userProfile = await databases.listDocuments(
+        DATABASE_ID,
+        COLLECTIONS.USERS,
+        [Query.equal('userId', userId)]
+      );
+      
+      if (userProfile.documents.length > 0) {
+        const profile = userProfile.documents[0];
+        console.log('Current user profile status:', profile.status, 'Email verified:', profile.isVerified);
+        
+        // If the user was previously verified, ensure they remain verified after password reset
+        if (profile.isVerified && profile.status === 'active') {
+          console.log('User was already verified, maintaining verification status');
+        } else {
+          // If somehow the verification was lost, we might need to handle this case
+          console.log('User verification status needs attention');
+        }
+      }
+      
+      // Clear local state to ensure clean logout
+      setUser(null);
+      setUserProfile(null);
+      setInvestments([]);
+      setTransactions([]);
+      setPaymentMethods([]);
+      setTransfers([]);
+      
+      toast.success('Password reset successfully! You can now log in with your new password.');
+      return { success: true };
+    } catch (error: any) {
+      console.error('Password reset error:', error);
+      const errorMessage = error.message || 'Password reset failed';
+      toast.error(errorMessage);
+      return { success: false, error: errorMessage };
     }
   };
 
@@ -1103,6 +1232,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       ssn?: string;
       idType?: string;
     };
+    documents?: {
+      front?: { id: string; name: string } | null;
+      back?: { id: string; name: string } | null;
+      dataPage?: { id: string; name: string } | null;
+    };
     secretPhrase?: string;
     preferences?: {
       darkMode?: boolean;
@@ -1142,6 +1276,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       // If preferences is provided, serialize it as JSON string
       if (preferences) {
         updateData.preferences = JSON.stringify(preferences);
+      }
+
+      // If documents is provided, serialize it as JSON string
+      if (updates.documents) {
+        updateData.documents = JSON.stringify(updates.documents);
       }
 
       await databases.updateDocument(
@@ -2064,6 +2203,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     createTransfer,
     fetchUserTransfers,
     validateRecipient,
+    // Email verification functions
+    verifyEmail,
+    resendVerificationEmail,
+    // Password recovery functions
+    sendPasswordRecoveryEmail,
+    resetPassword,
     databases,
     storage,
     DATABASE_ID,

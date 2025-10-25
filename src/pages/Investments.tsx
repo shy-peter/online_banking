@@ -17,14 +17,14 @@ import {
   Send
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import { formatCurrency, calculateMonthlyInterest, getInvestmentPlan, INVESTMENT_PLANS } from '../lib/appwrite';
+import { formatCurrency, calculateMonthlyInterest, getInvestmentPlan } from '../lib/appwrite';
 import InvestmentModal from '../components/InvestmentModal';
 import WithdrawalModal from '../components/WithdrawalModal';
 import TransferModal from '../components/TransferModal';
 import type { Investment } from '../types/appwrite';
 
 const Investments: React.FC = () => {
-  const { investments, transactions, userProfile } = useAuth();
+  const { investments, transactions } = useAuth();
   const navigate = useNavigate();
   const [showModal, setShowModal] = useState<boolean>(false);
   const [showWithdrawalModal, setShowWithdrawalModal] = useState<boolean>(false);
@@ -45,11 +45,11 @@ const Investments: React.FC = () => {
   const getStatusIcon = (status: string): React.ReactElement => {
     switch (status) {
       case 'active':
-        return <CheckCircle className="w-5 h-5 text-success-500" />;
+        return <CheckCircle className="w-5 h-5 text-[#d8ed36]" />;
       case 'pending':
-        return <Clock className="w-5 h-5 text-yellow-500" />;
+        return <Clock className="w-5 h-5 text-[#d8ed36]" />;
       case 'cancelled':
-        return <XCircle className="w-5 h-5 text-danger-500" />;
+        return <XCircle className="w-5 h-5 text-red-400" />;
       default:
         return <Clock className="w-5 h-5 text-gray-500" />;
     }
@@ -58,13 +58,13 @@ const Investments: React.FC = () => {
   const getStatusColor = (status: string): string => {
     switch (status) {
       case 'active':
-        return 'bg-success-100 text-success-800';
+        return 'bg-[#d8ed36] text-black';
       case 'pending':
-        return 'bg-yellow-100 text-yellow-800';
+        return 'bg-[#d8ed36] text-black';
       case 'cancelled':
-        return 'bg-danger-100 text-danger-800';
+        return 'bg-red-900 text-red-300';
       default:
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-gray-800 text-gray-300';
     }
   };
 
@@ -103,11 +103,11 @@ const Investments: React.FC = () => {
 
   const totalInvested = investments.reduce((sum, inv) => sum + (inv.status === 'active' ? inv.amount : 0), 0);
   const totalEarnings = transactions
-    .filter(t => (t.type === 'earning' || t.type === 'transfer_in') && t.status === 'completed')
+    .filter(t => t.type === 'earning' && t.status === 'completed')
     .reduce((sum, t) => sum + t.amount, 0);
   
   const totalWithdrawals = transactions
-    .filter(t => (t.type === 'withdrawal' || t.type === 'transfer_out') && t.status === 'completed')
+    .filter(t => t.type === 'withdrawal' && t.status === 'completed')
     .reduce((sum, t) => sum + t.amount, 0);
   
   const availableBalance = totalEarnings - totalWithdrawals;
@@ -121,7 +121,7 @@ const Investments: React.FC = () => {
   }, 0);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 p-6">
       {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: -20 }}
@@ -131,12 +131,12 @@ const Investments: React.FC = () => {
       >
         <div className="flex items-center justify-between w-full">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">My Investments</h1>
-            <p className="text-gray-600 mt-1">Manage and track your investment portfolio</p>
+            <h1 className="text-2xl font-bold text-white">My Investments</h1>
+            <p className="text-gray-300 mt-1">Manage and track your investment portfolio</p>
           </div>
           <button
             onClick={() => navigate('/dashboard')}
-            className="flex md:hidden items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors duration-200"
+            className="flex md:hidden items-center px-4 py-2 text-sm font-medium text-white bg-gray-800 border border-gray-700 rounded-lg hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#d8ed36] transition-colors duration-200"
           >
             <ArrowLeft className="w-4 h-4 mr-2 " />
             Back to Dashboard
@@ -179,7 +179,7 @@ const Investments: React.FC = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">Total Invested</p>
-                <p className="text-2xl font-bold text-gray-900 mt-2">
+                <p className="text-2xl font-bold text-white mt-2">
                   {formatCurrency(totalInvested)}
                 </p>
               </div>
@@ -195,7 +195,7 @@ const Investments: React.FC = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">Total Earnings</p>
-                <p className="text-2xl font-bold text-gray-900 mt-2">
+                <p className="text-2xl font-bold text-white mt-2">
                   {formatCurrency(totalEarnings)}
                 </p>
               </div>
@@ -211,7 +211,7 @@ const Investments: React.FC = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">Available Balance</p>
-                <p className="text-2xl font-bold text-gray-900 mt-2">
+                <p className="text-2xl font-bold text-white mt-2">
                   {formatCurrency(availableBalance)}
                 </p>
                 <p className="text-xs text-gray-500 mt-1">
@@ -230,7 +230,7 @@ const Investments: React.FC = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">Monthly Income</p>
-                <p className="text-2xl font-bold text-gray-900 mt-2">
+                <p className="text-2xl font-bold text-white mt-2">
                   {formatCurrency(monthlyIncome)}
                 </p>
               </div>
@@ -246,7 +246,7 @@ const Investments: React.FC = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">Active Investments</p>
-                <p className="text-2xl font-bold text-gray-900 mt-2">
+                <p className="text-2xl font-bold text-white mt-2">
                   {activeInvestments}
                 </p>
               </div>

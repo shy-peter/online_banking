@@ -23,7 +23,7 @@ const ConsentModal: React.FC<ConsentModalProps> = ({
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
-            className="bg-white rounded-lg shadow-2xl w-full max-w-sm"
+            className="bg-gray-900 rounded-lg shadow-2xl w-full max-w-sm border border-gray-800"
             style={{
               borderRadius: '5px',
               width: '300px',
@@ -38,25 +38,22 @@ const ConsentModal: React.FC<ConsentModalProps> = ({
           >
             {/* Header */}
             <div className="flex items-center justify-between mb-2">
-              <h5 className="text-lg font-semibold" style={{ color: '#002082' }}>
+              <h5 className="text-lg font-semibold text-white">
                 Notice Of Consent!
               </h5>
               <button
                 onClick={onClose}
-                className="text-gray-400 hover:text-gray-600 transition-colors"
+                className="text-gray-400 hover:text-[#d8ed36] transition-colors"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
             {/* Divider */}
-            <hr className="mb-2 border-gray-300" />
+            <hr className="mb-2 border-gray-700" />
 
             {/* Content */}
-            <div 
-              className="p-1 mt-3 text-sm leading-relaxed"
-              style={{ color: 'rgb(1, 33, 104)' }}
-            >
+            <div className="p-1 mt-3 text-sm leading-relaxed text-gray-300">
               We will collect your personal data for the purpose of opening and managing your account. 
               Kindly accept to continue.
             </div>
@@ -65,23 +62,14 @@ const ConsentModal: React.FC<ConsentModalProps> = ({
             <div className="mt-3 flex items-center justify-between">
               <button
                 onClick={onReject}
-                className="rounded p-3 text-sm font-medium transition-colors duration-200 hover:opacity-80"
-                style={{ 
-                  color: '#002082', 
-                  backgroundColor: 'rgb(186, 191, 190)',
-                  cursor: 'pointer'
-                }}
+                className="rounded p-3 text-sm font-medium transition-colors duration-200 hover:opacity-80 bg-gray-700 text-gray-300 hover:bg-gray-600"
               >
                 I reject
               </button>
               
               <button
                 onClick={onAccept}
-                className="rounded p-3 text-sm font-medium text-white transition-colors duration-200 hover:opacity-90"
-                style={{ 
-                  backgroundColor: '#002082',
-                  cursor: 'pointer'
-                }}
+                className="rounded p-3 text-sm font-medium text-black transition-colors duration-200 hover:opacity-90 bg-[#d8ed36] hover:bg-[#c4d630]"
               >
                 I accept
               </button>

@@ -36,9 +36,11 @@ import LoadingSpinner from '../components/LoadingSpinner';
 import VerificationBadge from '../components/VerificationBadge';
 import PasswordChangeModal from '../components/PasswordChangeModal';
 import LoginHistoryModal from '../components/LoginHistoryModal';
+import IDDocumentUpload from '../components/IDDocumentUpload';
+import IDDocumentUploadFallback from '../components/IDDocumentUploadFallback';
 
 const Profile = () => {
-  const { user, userProfile, investments, updateUserProfile, changePassword, getLoginHistory, terminateSession, terminateAllOtherSessions } = useAuth();
+  const { user, userProfile, investments, updateUserProfile, changePassword, getLoginHistory, terminateSession, terminateAllOtherSessions, resendVerificationEmail } = useAuth();
   const navigate = useNavigate();
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState({
@@ -62,6 +64,12 @@ const Profile = () => {
   const [profilePicture, setProfilePicture] = useState<string | File | null>(
     userProfile?.profilePicture || localStorage.getItem(`profilePicture_${user?.$id}`) || null
   );
+  const [documents, setDocuments] = useState({
+    front: undefined as { id: string; name: string } | undefined,
+    back: undefined as { id: string; name: string } | undefined,
+    dataPage: undefined as { id: string; name: string } | undefined
+  });
+  const [useStorageFallback] = useState(true); // Set to true to use fallback
   const [isUploading, setIsUploading] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const fileInputRef = useRef(null);
@@ -69,12 +77,27 @@ const Profile = () => {
   const [showSecretPhrase, setShowSecretPhrase] = useState(false);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [showLoginHistoryModal, setShowLoginHistoryModal] = useState(false);
+  const [isResendingEmail, setIsResendingEmail] = useState(false);
 
   const handleEditChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setEditData({
       ...editData,
       [e.target.name]: e.target.value
     });
+  };
+
+  const handleDocumentUpload = (fileId: string, fileName: string, documentSide: string) => {
+    setDocuments(prev => ({
+      ...prev,
+      [documentSide]: { id: fileId, name: fileName }
+    }));
+  };
+
+  const handleDocumentRemove = (documentSide: string) => {
+    setDocuments(prev => ({
+      ...prev,
+      [documentSide]: undefined
+    }));
   };
 
   const handleSave = async () => {
@@ -97,6 +120,11 @@ const Profile = () => {
           ssn: editData.ssn,
           idType: editData.idType
         },
+        documents: {
+          front: documents.front,
+          back: documents.back,
+          dataPage: documents.dataPage
+        },
         secretPhrase: editData.secretPhrase
       });
       
@@ -107,6 +135,17 @@ const Profile = () => {
       console.error('Error updating profile:', error);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleResendVerificationEmail = async () => {
+    setIsResendingEmail(true);
+    try {
+      await resendVerificationEmail();
+    } catch (error) {
+      console.error('Error resending verification email:', error);
+    } finally {
+      setIsResendingEmail(false);
     }
   };
 
@@ -471,13 +510,13 @@ const Profile = () => {
                   )}
                 </div>
 
-                <div>
+                <div c>
                   <label className="form-label">Email Address</label>
                   <ClickToCopy text={user?.email || ''} className="form-input bg-gray-50 flex items-center">
                     <Mail className="w-4 h-4 text-gray-400 mr-3" />
                     <span>{user?.email || 'Not provided'}</span>
                   </ClickToCopy>
-                  <p className="text-xs text-gray-500 mt-1">Email cannot be changed</p>
+                  <p className="text-xs text-gray-500 mt-1 ">Email cannot be changed</p>
                 </div>
 
                 <div>
@@ -527,6 +566,33 @@ const Profile = () => {
                       </span>
                     )}
                   </div>
+                </div>
+
+                {/* Email Verification Status */}
+                <div>
+                  <label className="form-label">Email Verification</label>
+                  <div className="form-input bg-gray-50 flex items-center justify-between">
+                    <div className="flex items-center">
+                      <Mail className="w-4 h-4 text-gray-400 mr-3" />
+                      <span className="text-sm">
+                        {userProfile?.isVerified ? 'Verified' : 'Pending Verification'}
+                      </span>
+                    </div>
+                    {!userProfile?.isVerified && (
+                      <button
+                        onClick={handleResendVerificationEmail}
+                        disabled={isResendingEmail}
+                        className="text-primary-600 hover:text-primary-700 text-sm disabled:opacity-50"
+                      >
+                        {isResendingEmail ? 'Sending...' : 'Resend Email'}
+                      </button>
+                    )}
+                  </div>
+                  {!userProfile?.isVerified && (
+                    <p className="text-xs text-gray-500 mt-1">
+                      Please check your email and click the verification link to activate your account.
+                    </p>
+                  )}
                 </div>
               </div>
 
@@ -810,6 +876,42 @@ const Profile = () => {
                     </div>
                   )}
                 </div>
+
+                {/* Document Upload Section */}
+                {isEditing && editData.idType && (
+                  <div className="col-span-2">
+                    <label className="form-label">Upload ID Documents</label>
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+                      <div className="flex items-start space-x-3">
+                        <FileText className="w-5 h-5 text-blue-600 mt-0.5" />
+                        <div>
+                          <h4 className="text-sm font-medium text-blue-800">Identity Verification</h4>
+                          <p className="text-sm text-blue-700 mt-1">
+                            Please upload clear, high-quality images of your {editData.idType.replace('-', ' ')}. 
+                            All documents will be securely stored and used for verification purposes only.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {useStorageFallback ? (
+                      <IDDocumentUploadFallback
+                        idType={editData.idType as 'drivers-license' | 'passport' | 'state-id' | 'national-id'}
+                        onUpload={handleDocumentUpload}
+                        onRemove={handleDocumentRemove}
+                        currentFiles={documents}
+                      />
+                    ) : (
+                      <IDDocumentUpload
+                        idType={editData.idType as 'drivers-license' | 'passport' | 'state-id' | 'national-id'}
+                        userId={user?.$id || ''}
+                        onUpload={handleDocumentUpload}
+                        onRemove={handleDocumentRemove}
+                        currentFiles={documents}
+                      />
+                    )}
+                  </div>
+                )}
 
                 <div>
                   <label className="form-label">Secret Phrase</label>

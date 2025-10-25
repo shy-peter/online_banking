@@ -1,24 +1,22 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Lock, Eye, EyeOff, Check, X, AlertTriangle, Mail } from 'lucide-react';
+import { Mail, X, CheckCircle, AlertCircle } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import LoadingSpinner from './LoadingSpinner';
 
-interface PasswordRecoveryModalProps {
+interface ForgotPasswordModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSuccess: () => void;
 }
 
-const PasswordRecoveryModal: React.FC<PasswordRecoveryModalProps> = ({
+const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({
   isOpen,
-  onClose,
-  onSuccess
+  onClose
 }) => {
   const { sendPasswordRecoveryEmail } = useAuth();
-  const [step, setStep] = useState<'email' | 'sent'>('email');
   const [email, setEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
   const [error, setError] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -40,7 +38,7 @@ const PasswordRecoveryModal: React.FC<PasswordRecoveryModalProps> = ({
       const result = await sendPasswordRecoveryEmail(email);
       
       if (result.success) {
-        setStep('sent');
+        setIsSuccess(true);
       } else {
         setError(result.error || 'Failed to send recovery email');
       }
@@ -53,11 +51,17 @@ const PasswordRecoveryModal: React.FC<PasswordRecoveryModalProps> = ({
 
   const handleClose = () => {
     if (!isLoading) {
-      setStep('email');
       setEmail('');
       setError('');
+      setIsSuccess(false);
       onClose();
     }
+  };
+
+  const handleBackToForm = () => {
+    setIsSuccess(false);
+    setEmail('');
+    setError('');
   };
 
   return (
@@ -79,12 +83,12 @@ const PasswordRecoveryModal: React.FC<PasswordRecoveryModalProps> = ({
                   </div>
                   <div>
                     <h3 className="text-lg font-semibold text-gray-900">
-                      {step === 'email' ? 'Reset Password' : 'Check Your Email'}
+                      {isSuccess ? 'Check Your Email' : 'Reset Password'}
                     </h3>
                     <p className="text-sm text-gray-600">
-                      {step === 'email' 
-                        ? 'Enter your email to receive a reset link'
-                        : 'We sent you a recovery link'
+                      {isSuccess 
+                        ? 'We sent you a recovery link'
+                        : 'Enter your email to receive a reset link'
                       }
                     </p>
                   </div>
@@ -98,75 +102,10 @@ const PasswordRecoveryModal: React.FC<PasswordRecoveryModalProps> = ({
                 </button>
               </div>
 
-              {step === 'email' && (
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-                  <div className="flex items-start space-x-3">
-                    <AlertTriangle className="w-5 h-5 text-blue-600 mt-0.5" />
-                    <div>
-                      <h4 className="text-sm font-medium text-blue-800">Password Reset</h4>
-                      <p className="text-sm text-blue-700 mt-1">
-                        Enter your email address and we'll send you a secure link to reset your password.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {step === 'email' ? (
-                <form onSubmit={handleSubmit} className="space-y-4">
-                  {/* Email Input */}
-                  <div>
-                    <label className="form-label">Email Address</label>
-                    <div className="relative">
-                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <Mail className="h-5 w-5 text-gray-400" />
-                      </div>
-                      <input
-                        type="email"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        className="form-input pl-10"
-                        placeholder="Enter your email address"
-                        disabled={isLoading}
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  {/* Error Message */}
-                  {error && (
-                    <div className="bg-red-50 border border-red-200 rounded-lg p-3">
-                      <p className="text-sm text-red-600">{error}</p>
-                    </div>
-                  )}
-
-                  {/* Action Buttons */}
-                  <div className="flex space-x-3 pt-4">
-                    <button
-                      type="button"
-                      onClick={handleClose}
-                      disabled={isLoading}
-                      className="btn-secondary flex-1 disabled:opacity-50"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      type="submit"
-                      disabled={isLoading}
-                      className="btn-primary flex-1 disabled:opacity-50"
-                    >
-                      {isLoading ? (
-                        <LoadingSpinner size="sm" />
-                      ) : (
-                        'Send Reset Link'
-                      )}
-                    </button>
-                  </div>
-                </form>
-              ) : (
+              {isSuccess ? (
                 <div className="text-center">
                   <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <Check className="w-8 h-8 text-green-600" />
+                    <CheckCircle className="w-8 h-8 text-green-600" />
                   </div>
                   <h4 className="text-lg font-semibold text-gray-900 mb-2">
                     Email Sent Successfully!
@@ -178,14 +117,14 @@ const PasswordRecoveryModal: React.FC<PasswordRecoveryModalProps> = ({
                   
                   <div className="space-y-3">
                     <button
-                      onClick={() => setStep('email')}
-                      className="btn-secondary w-full"
+                      onClick={handleBackToForm}
+                      className="btn-secondary w-full py-3 md:py-4"
                     >
                       Send to Different Email
                     </button>
                     <button
                       onClick={handleClose}
-                      className="btn-primary w-full"
+                      className="btn-primary w-full py-3 md:py-4"
                     >
                       Close
                     </button>
@@ -202,13 +141,67 @@ const PasswordRecoveryModal: React.FC<PasswordRecoveryModalProps> = ({
                     </ul>
                   </div>
                 </div>
+              ) : (
+                <form onSubmit={handleSubmit} className="space-y-4">
+                  {/* Email Input */}
+                  <div>
+                    <label className="form-label">Email Address</label>
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <Mail className="h-5 w-5 text-gray-400" />
+                      </div>
+                      <input
+                        type="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        className="form-input pl-10 py-2 md:py-3"
+                        placeholder="Enter your email address"
+                        disabled={isLoading}
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  {/* Error Message */}
+                  {error && (
+                    <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                      <div className="flex items-start space-x-2">
+                        <AlertCircle className="w-4 h-4 text-red-600 mt-0.5 flex-shrink-0" />
+                        <p className="text-sm text-red-600">{error}</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Action Buttons */}
+                  <div className="flex space-x-3 pt-4">
+                    <button
+                      type="button"
+                      onClick={handleClose}
+                      disabled={isLoading}
+                      className="btn-secondary flex-1 py-3 md:py-4 disabled:opacity-50"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={isLoading}
+                      className="btn-primary flex-1 disabled:opacity-50"
+                    >
+                      {isLoading ? (
+                        <LoadingSpinner size="sm" />
+                      ) : (
+                        'Send Reset Link'
+                      )}
+                    </button>
+                  </div>
+                </form>
               )}
 
               {/* Security Notice */}
               <div className="mt-6 pt-4 border-t border-gray-200">
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
                   <div className="flex items-start space-x-2">
-                    <AlertTriangle className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
+                    <AlertCircle className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
                     <div>
                       <h4 className="text-sm font-medium text-blue-800">Security Notice</h4>
                       <p className="text-xs text-blue-700 mt-1">
@@ -227,4 +220,4 @@ const PasswordRecoveryModal: React.FC<PasswordRecoveryModalProps> = ({
   );
 };
 
-export default PasswordRecoveryModal;
+export default ForgotPasswordModal;

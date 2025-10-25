@@ -23,15 +23,15 @@ const Header = () => {
       initial={{ opacity: 0, y: -20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6 }}
-      className="bg-white border-b border-gray-200 px-6 py-4"
+      className="bg-black border-b border-gray-800 px-6 py-4"
     >
       <div className="flex items-center justify-between">
         {/* Welcome message */}
         <div>
-          <h1 className="text-xl font-semibold text-gray-900">
+          <h1 className="text-xl font-semibold text-white">
             Welcome back{userProfile?.name ? `, ${userProfile.name.split(' ')[0]}` : ''}!
           </h1>
-          <p className="text-sm text-gray-600 mt-1">
+          <p className="text-sm text-gray-300 mt-1">
             {totalPortfolioValue > 0 ? (
               <>Your portfolio is valued at {formatCurrency(totalPortfolioValue)}</>
             ) : (
@@ -51,7 +51,7 @@ const Header = () => {
               <input
                 type="text"
                 placeholder="Search transactions..."
-                className="input-field pl-10 py-2 w-64 text-sm"
+                className="bg-gray-800 border border-gray-700 text-white placeholder-gray-400 pl-10 py-2 w-64 text-sm rounded-lg focus:outline-none focus:ring-2 focus:ring-[#d8ed36] focus:border-transparent"
               />
             </div>
           </div>
@@ -62,7 +62,7 @@ const Header = () => {
           {/* Settings */}
           <button 
             onClick={() => navigate('/settings')}
-            className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+            className="p-2 text-gray-400 hover:text-[#d8ed36] hover:bg-gray-800 rounded-lg transition-colors"
           >
             <Settings className="h-5 w-5" />
           </button>
@@ -71,9 +71,9 @@ const Header = () => {
           {userProfile && (
             <button 
               onClick={() => navigate('/profile')}
-              className="flex items-center space-x-3 p-1 hover:bg-gray-100 rounded-lg transition-colors duration-200"
+              className="flex items-center space-x-3 p-1 hover:bg-gray-800 rounded-lg transition-colors duration-200"
             >
-              <div className="w-8 h-8 bg-primary-600 rounded-full flex items-center justify-center overflow-hidden">
+              <div className="w-8 h-8 bg-[#d8ed36] rounded-full flex items-center justify-center overflow-hidden">
                 {userProfile.profilePicture || localStorage.getItem(`profilePicture_${userProfile.userId}`) ? (
                   <img 
                     src={userProfile.profilePicture || localStorage.getItem(`profilePicture_${userProfile.userId}`)} 
@@ -81,7 +81,7 @@ const Header = () => {
                     className="w-full h-full object-cover"
                   />
                 ) : (
-                  <span className="text-xs font-semibold text-white">
+                  <span className="text-xs font-semibold text-black">
                     {userProfile.name?.charAt(0).toUpperCase()}
                   </span>
                 )}

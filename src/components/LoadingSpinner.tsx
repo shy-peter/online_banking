@@ -20,10 +20,10 @@ const LoadingSpinner = ({ size = 'md', className = '' }) => {
     <div className={`flex items-center justify-center ${className}`}>
       <div className="relative">
         <div
-          className={`animate-spin rounded-full border-2 border-gray-300 border-t-primary-600 ${sizeClasses[size]}`}
+          className={`animate-spin rounded-full border-2 border-gray-600 border-t-[#d8ed36] ${sizeClasses[size]}`}
         ></div>
         <div className="absolute inset-0 flex items-center justify-center">
-          <DollarSign className={`${iconSizes[size]} text-primary-600`} />
+          <DollarSign className={`${iconSizes[size]} text-[#d8ed36]`} />
         </div>
       </div>
     </div>

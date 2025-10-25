@@ -1014,11 +1014,11 @@ const Settings = () => {
                         <div>
                           <label className="form-label">Social Security Number</label>
                           {isEditing ? (
-                            <div className="relative">
+                            <div className="relative ">
                               <input
                                 name="ssn"
                                 type={showSSN ? 'text' : 'password'}
-                                className="form-input pr-10"
+                                className="form-input pr-10 "
                                 value={editData.ssn}
                                 onChange={handleEditChange}
                                 placeholder="XXX-XX-XXXX"
@@ -1069,7 +1069,7 @@ const Settings = () => {
                         <div>
                           <label className="form-label">Secret Phrase</label>
                           {isEditing ? (
-                            <div className="relative">
+                            <div className="relative y65u65ttttttttttttttt">
                               <input
                                 name="secretPhrase"
                                 type={showSecretPhrase ? 'text' : 'password'}

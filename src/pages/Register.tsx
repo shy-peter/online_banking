@@ -194,7 +194,7 @@ const Register = () => {
       );
 
       if (result.success) {
-        navigate('/dashboard');
+        navigate('/verify-email');
       }
     } catch (error) {
       console.error('Registration error:', error);
@@ -204,8 +204,9 @@ const Register = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary-50 via-white to-success-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-4xl mx-auto">
+    <div className="min-h-screen bg-black py-12 px-4 sm:px-6 lg:px-8">
+      <div className="absolute inset-0 bg-gradient-to-br from-black via-gray-900 to-black"></div>
+      <div className="relative max-w-4xl mx-auto">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
@@ -214,12 +215,12 @@ const Register = () => {
           className="text-center mb-8"
         >
           <div className="flex items-center justify-center mb-6">
-            <div className="w-12 h-12 bg-gradient-to-r from-primary-600 to-primary-700 rounded-xl flex items-center justify-center">
-              <DollarSign className="w-7 h-7 text-white" />
+            <div className="w-12 h-12 bg-[#d8ed36] rounded-xl flex items-center justify-center">
+              <DollarSign className="w-7 h-7 text-black" />
             </div>
-            <h1 className="text-3xl font-bold text-gray-900 ml-3">InvestFlow</h1>
+            <h1 className="text-3xl font-bold text-white ml-3">InvestFlow</h1>
           </div>
-          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+          <p className="text-lg text-gray-300 max-w-2xl mx-auto">
             Join thousands of investors building wealth with our smart investment platform
           </p>
         </motion.div>
@@ -233,30 +234,30 @@ const Register = () => {
         >
           <div className="flex items-center justify-center space-x-2 mb-4">
             <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold ${
-              step >= 1 ? 'bg-primary-600 text-white' : 'bg-gray-200 text-gray-500'
+              step >= 1 ? 'bg-[#d8ed36] text-black' : 'bg-gray-700 text-gray-400'
             }`}>
               1
             </div>
-            <div className={`h-1 w-16 rounded ${step >= 2 ? 'bg-primary-600' : 'bg-gray-200'}`} />
+            <div className={`h-1 w-16 rounded ${step >= 2 ? 'bg-[#d8ed36]' : 'bg-gray-700'}`} />
             <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold ${
-              step >= 2 ? 'bg-primary-600 text-white' : 'bg-gray-200 text-gray-500'
+              step >= 2 ? 'bg-[#d8ed36] text-black' : 'bg-gray-700 text-gray-400'
             }`}>
               2
             </div>
-            <div className={`h-1 w-16 rounded ${step >= 3 ? 'bg-primary-600' : 'bg-gray-200'}`} />
+            <div className={`h-1 w-16 rounded ${step >= 3 ? 'bg-[#d8ed36]' : 'bg-gray-700'}`} />
             <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold ${
-              step >= 3 ? 'bg-primary-600 text-white' : 'bg-gray-200 text-gray-500'
+              step >= 3 ? 'bg-[#d8ed36] text-black' : 'bg-gray-700 text-gray-400'
             }`}>
               3
             </div>
-            <div className={`h-1 w-16 rounded ${step >= 4 ? 'bg-primary-600' : 'bg-gray-200'}`} />
+            <div className={`h-1 w-16 rounded ${step >= 4 ? 'bg-[#d8ed36]' : 'bg-gray-700'}`} />
             <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold ${
-              step >= 4 ? 'bg-primary-600 text-white' : 'bg-gray-200 text-gray-500'
+              step >= 4 ? 'bg-[#d8ed36] text-black' : 'bg-gray-700 text-gray-400'
             }`}>
               4
             </div>
           </div>
-          <div className="flex justify-center space-x-8 text-xs text-gray-600">
+          <div className="flex justify-center space-x-8 text-xs text-gray-300">
             <span>Account</span>
             <span>Personal</span>
             <span>Address</span>
@@ -271,8 +272,8 @@ const Register = () => {
           transition={{ duration: 0.6, delay: 0.2 }}
           className="max-w-2xl mx-auto"
         >
-          <div className="card">
-            <div className="card-body p-8">
+          <div className="bg-gray-900 rounded-2xl shadow-2xl border border-gray-800">
+            <div className="p-8">
               <form onSubmit={handleSubmit}>
                 {step === 1 ? (
                   <div className="space-y-6">
@@ -778,7 +779,7 @@ const Register = () => {
               <div className="mt-6 text-center">
                 <p className="text-gray-600">
                   Already have an account?{' '}
-                  <Link to="/login" className="text-primary-600 hover:text-primary-700 font-medium">
+                  <Link to="/login" className="text-primary-600  hover:text-[#8c9e0b] text-[#dcf428] font-medium">
                     Sign in
                   </Link>
                 </p>

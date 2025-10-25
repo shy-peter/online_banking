@@ -67,6 +67,10 @@ const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState<'overview' | 'payment-methods' | 'transactions' | 'support' | 'user-search' | 'bonus-codes'>('overview');
   const [selectedUserForDetails, setSelectedUserForDetails] = useState<any>(null);
   const [showUserDetails, setShowUserDetails] = useState(false);
+  const [userDetailsLoading, setUserDetailsLoading] = useState(false);
+  const [userTransactions, setUserTransactions] = useState<any[]>([]);
+  const [userInvestments, setUserInvestments] = useState<any[]>([]);
+  const [userPaymentMethods, setUserPaymentMethods] = useState<any[]>([]);
   const [bonusCodes, setBonusCodes] = useState<BonusCode[]>([]);
   const [bonusCodesLoading, setBonusCodesLoading] = useState(false);
   const [showCreateBonusCode, setShowCreateBonusCode] = useState(false);
@@ -204,6 +208,43 @@ const AdminDashboard = () => {
     }
   };
 
+  // Fetch complete user data for user details modal
+  const fetchUserDetails = async (userId: string) => {
+    setUserDetailsLoading(true);
+    try {
+      const { databases, DATABASE_ID, COLLECTIONS } = await import('../lib/appwrite');
+      const { Query } = await import('appwrite');
+      
+      // Fetch user transactions
+      const transactionsResponse = await databases.listDocuments(
+        DATABASE_ID,
+        COLLECTIONS.TRANSACTIONS,
+        [Query.equal('userId', userId), Query.orderDesc('$createdAt')]
+      );
+      setUserTransactions(transactionsResponse.documents);
+
+      // Fetch user investments
+      const investmentsResponse = await databases.listDocuments(
+        DATABASE_ID,
+        COLLECTIONS.INVESTMENTS,
+        [Query.equal('userId', userId), Query.orderDesc('$createdAt')]
+      );
+      setUserInvestments(investmentsResponse.documents);
+
+      // Fetch user payment methods
+      const paymentMethodsResponse = await databases.listDocuments(
+        DATABASE_ID,
+        COLLECTIONS.PAYMENT_METHODS,
+        [Query.equal('userId', userId), Query.orderDesc('$createdAt')]
+      );
+      setUserPaymentMethods(paymentMethodsResponse.documents);
+    } catch (error) {
+      console.error('Error fetching user details:', error);
+    } finally {
+      setUserDetailsLoading(false);
+    }
+  };
+
   const createBonusCode = async () => {
     if (!bonusCodeForm.code.trim()) {
       alert('Please enter a bonus code');
@@ -307,6 +348,28 @@ const AdminDashboard = () => {
     } finally {
       setSearchLoading(false);
     }
+  };
+
+  // Handle opening user details modal
+  const handleViewUser = async (user: any) => {
+    setSelectedUserForDetails(user);
+    setShowUserDetails(true);
+    // Fetch complete user data
+    await fetchUserDetails(user.userId);
+  };
+
+  // Handle refreshing user data
+  const handleRefreshUserData = async (userId: string) => {
+    await fetchUserDetails(userId);
+  };
+
+  // Handle closing user details modal
+  const handleCloseUserDetails = () => {
+    setShowUserDetails(false);
+    setSelectedUserForDetails(null);
+    setUserTransactions([]);
+    setUserInvestments([]);
+    setUserPaymentMethods([]);
   };
 
   const clearSearch = () => {
@@ -424,10 +487,6 @@ const AdminDashboard = () => {
     setShowUserDetails(true);
   };
 
-  const handleCloseUserDetails = () => {
-    setShowUserDetails(false);
-    setSelectedUserForDetails(null);
-  };
 
   const adjustUserEarnings = async (userId: string, amount: number, type: 'increase' | 'decrease', reason: string) => {
     try {
@@ -1489,7 +1548,7 @@ const AdminDashboard = () => {
                         
                         <div className="text-right">
                           <button
-                            onClick={() => handleViewUserDetails(user)}
+                            onClick={() => handleViewUser(user)}
                             className="btn-primary px-4 py-2 flex items-center space-x-2"
                           >
                             <Eye className="w-4 h-4" />
@@ -1993,9 +2052,11 @@ const AdminDashboard = () => {
         isOpen={showUserDetails}
         onClose={handleCloseUserDetails}
         user={selectedUserForDetails}
-        transactions={transactions.filter(t => t.userId === selectedUserForDetails?.userId)}
-        investments={investments.filter(i => i.userId === selectedUserForDetails?.userId)}
-        paymentMethods={[]} // You can add payment methods filtering here if needed
+        transactions={userTransactions}
+        investments={userInvestments}
+        paymentMethods={userPaymentMethods}
+        isLoading={userDetailsLoading}
+        onRefreshUserData={handleRefreshUserData}
         onUpdateUser={updateUser}
         onAdjustEarnings={async (userId, amount, type, reason) => {
           try {

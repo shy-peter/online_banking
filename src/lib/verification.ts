@@ -108,8 +108,13 @@ export const canMakeWithdrawal = (userProfile: UserProfile | null): boolean => {
 /**
  * Get verification status based on profile completion and verification
  */
-export const getVerificationStatus = (userProfile: UserProfile | null): 'pending' | 'verified' | 'rejected' | 'incomplete' => {
+export const getVerificationStatus = (userProfile: UserProfile | null): 'pending' | 'verified' | 'rejected' | 'incomplete' | 'email_pending' => {
   if (!userProfile) return 'incomplete';
+  
+  // Check if email is not verified
+  if (!userProfile.isVerified || userProfile.status === 'pending_verification') {
+    return 'email_pending';
+  }
   
   if (userProfile.verificationStatus) {
     return userProfile.verificationStatus;

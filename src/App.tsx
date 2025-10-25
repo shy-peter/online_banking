@@ -16,6 +16,9 @@ import AdminDashboard from './pages/AdminDashboard';
 import AdminTransactions from './pages/AdminTransactions';
 import AdminPaymentMethods from './pages/AdminPaymentMethods';
 import AdminPaymentMethodTypes from './pages/AdminPaymentMethodTypes';
+import SecurityCenter from './pages/SecurityCenter';
+import VerifyEmail from './pages/VerifyEmail';
+import ResetPassword from './pages/ResetPassword';
 import LoadingSpinner from './components/LoadingSpinner';
 
 const App: React.FC = () => {
@@ -65,6 +68,9 @@ const App: React.FC = () => {
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
               <Route path="/signup" element={<EnhancedSignup />} />
+              <Route path="/security" element={<SecurityCenter />} />
+              <Route path="/verify-email" element={<VerifyEmail />} />
+              <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="*" element={<Navigate to="/" replace />} />
             </>
           ) : (

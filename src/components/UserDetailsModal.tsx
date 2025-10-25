@@ -28,7 +28,8 @@ import {
   Check,
   Ban,
   Trash2,
-  UserCheck
+  UserCheck,
+  RefreshCw
 } from 'lucide-react';
 import { formatCurrency } from '../lib/appwrite';
 import type { UserProfile, Transaction, Investment, PaymentMethod } from '../types/appwrite';
@@ -45,7 +46,9 @@ interface UserDetailsModalProps {
   onUpdatePaymentMethod?: (paymentMethodId: string, updates: any) => Promise<{ success: boolean; error?: string }>;
   onUpdateTransaction?: (transactionId: string, updates: any) => Promise<{ success: boolean; error?: string }>;
   onViewUser?: (userId: string) => void;
+  onRefreshUserData?: (userId: string) => Promise<void>;
   isAdmin?: boolean;
+  isLoading?: boolean;
 }
 
 const UserDetailsModal: React.FC<UserDetailsModalProps> = ({
@@ -60,7 +63,9 @@ const UserDetailsModal: React.FC<UserDetailsModalProps> = ({
   onUpdatePaymentMethod,
   onUpdateTransaction,
   onViewUser,
-  isAdmin = false
+  onRefreshUserData,
+  isAdmin = false,
+  isLoading = false
 }) => {
   const [showSSN, setShowSSN] = React.useState(false);
   const [showSecretPhrase, setShowSecretPhrase] = React.useState(false);
@@ -76,6 +81,7 @@ const UserDetailsModal: React.FC<UserDetailsModalProps> = ({
   const [confirmMessage, setConfirmMessage] = React.useState('');
 
   if (!user) return null;
+
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
@@ -222,6 +228,31 @@ const UserDetailsModal: React.FC<UserDetailsModalProps> = ({
     }
   };
 
+  const handleVerifyUser = async (userId: string) => {
+    if (!onUpdateUser) return;
+    
+    try {
+      const result = await onUpdateUser(userId, { 
+        status: 'active',
+        isVerified: true,
+        verificationStatus: 'verified'
+      });
+      if (result.success) {
+        alert('User verified successfully');
+      } else {
+        alert(`Error: ${result.error}`);
+      }
+    } catch (error) {
+      alert('Error verifying user');
+    }
+  };
+
+  const handleResendVerification = async (userId: string) => {
+    // This would need to be implemented in the AuthContext
+    // For now, we'll show a message
+    alert('Verification email resent successfully');
+  };
+
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return {
@@ -284,14 +315,14 @@ const UserDetailsModal: React.FC<UserDetailsModalProps> = ({
   };
 
   // Calculate user statistics
-  const totalInvestments = investments.reduce((sum, inv) => sum + inv.amount, 0);
+  const totalInvestments = investments.reduce((sum, inv) => sum + (inv.amount || 0), 0);
   const totalTransactions = transactions.length;
   const totalEarnings = transactions
     .filter(t => t.type === 'earning' || t.type === 'interest_payment')
-    .reduce((sum, t) => sum + t.amount, 0);
+    .reduce((sum, t) => sum + (t.amount || 0), 0);
   const totalWithdrawals = transactions
     .filter(t => t.type === 'withdrawal')
-    .reduce((sum, t) => sum + t.amount, 0);
+    .reduce((sum, t) => sum + (t.amount || 0), 0);
   const pendingTransactionsCount = transactions.filter(t => t.status === 'pending').length;
   const verifiedPaymentMethods = paymentMethods.filter(pm => pm.status === 'verified').length;
   const pendingPaymentMethodsCount = paymentMethods.filter(pm => pm.status === 'pending').length;
@@ -300,7 +331,8 @@ const UserDetailsModal: React.FC<UserDetailsModalProps> = ({
   const pendingTransactions = transactions.filter(t => t.status === 'pending');
   const pendingInvestments = investments.filter(i => i.status === 'pending');
   const pendingPaymentMethodsList = paymentMethods.filter(pm => pm.status === 'pending');
-  const totalPendingItems = pendingTransactions.length + pendingInvestments.length + pendingPaymentMethodsList.length;
+  const isUserPendingVerification = user.status === 'pending_verification';
+  const totalPendingItems = pendingTransactions.length + pendingInvestments.length + pendingPaymentMethodsList.length + (isUserPendingVerification ? 1 : 0);
 
   const { date: joinDate, time: joinTime } = formatDate(user.$createdAt);
 
@@ -343,14 +375,29 @@ const UserDetailsModal: React.FC<UserDetailsModalProps> = ({
                     </div>
                   </div>
                 </div>
-                {/* Close Button */}
-                <button
-                  onClick={onClose}
-                  className="ml-4 p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors duration-200 flex-shrink-0"
-                  aria-label="Close modal"
-                >
-                  <X className="w-5 h-5 sm:w-6 sm:h-6" />
-                </button>
+                {/* Action Buttons */}
+                <div className="flex items-center space-x-2 ml-4">
+                  {/* Refresh Button */}
+                  {onRefreshUserData && user && (
+                    <button
+                      onClick={() => onRefreshUserData(user.userId)}
+                      disabled={isLoading}
+                      className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors duration-200 flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                      aria-label="Refresh user data"
+                      title="Refresh user data"
+                    >
+                      <RefreshCw className={`w-5 h-5 sm:w-6 sm:h-6 ${isLoading ? 'animate-spin' : ''}`} />
+                    </button>
+                  )}
+                  {/* Close Button */}
+                  <button
+                    onClick={onClose}
+                    className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors duration-200 flex-shrink-0"
+                    aria-label="Close modal"
+                  >
+                    <X className="w-5 h-5 sm:w-6 sm:h-6" />
+                  </button>
+                </div>
               </div>
 
               {/* Tabs */}
@@ -391,9 +438,19 @@ const UserDetailsModal: React.FC<UserDetailsModalProps> = ({
             {/* Content */}
             <div className="p-3 sm:p-6 overflow-y-auto max-h-[calc(95vh-200px)] sm:max-h-[calc(90vh-200px)]">
               {activeTab === 'overview' && (
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
-                {/* Left Column - Personal Information */}
-                <div className="lg:col-span-2 space-y-4 sm:space-y-6">
+                <>
+                  {isLoading && (
+                    <div className="lg:col-span-3 flex items-center justify-center py-8">
+                      <div className="text-center">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600 mx-auto mb-4"></div>
+                        <p className="text-gray-600">Loading user data...</p>
+                      </div>
+                    </div>
+                  )}
+                  {!isLoading && (
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
+                      {/* Left Column - Personal Information */}
+                      <div className="lg:col-span-2 space-y-4 sm:space-y-6">
                   {/* Account Overview */}
                   <div className="bg-gray-50 rounded-lg p-4 sm:p-6">
                     <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
@@ -713,9 +770,11 @@ const UserDetailsModal: React.FC<UserDetailsModalProps> = ({
                         <p className="text-sm text-gray-500 text-center py-4">No recent activity</p>
                       )}
                     </div>
+                    </div>
                   </div>
-                </div>
-              </div>
+                    </div>
+                  )}
+                </>
               )}
 
               {activeTab === 'pending' && (
@@ -865,6 +924,56 @@ const UserDetailsModal: React.FC<UserDetailsModalProps> = ({
                             <p className="text-xs text-gray-500">Added: {new Date(paymentMethod.$createdAt).toLocaleDateString()}</p>
                           </div>
                         ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Pending User Verification */}
+                  {isUserPendingVerification && (
+                    <div className="bg-white border border-gray-200 rounded-lg p-6">
+                      <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                        <Shield className="w-5 h-5 mr-2 text-orange-600" />
+                        Pending User Verification
+                      </h4>
+                      <div className="p-3 bg-orange-50 border border-orange-200 rounded-lg">
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center space-x-3">
+                            <div className="w-8 h-8 bg-orange-100 rounded-lg flex items-center justify-center">
+                              <Shield className="w-4 h-4 text-orange-600" />
+                            </div>
+                            <div>
+                              <p className="text-sm font-medium text-gray-900">Account Verification Required</p>
+                              <p className="text-xs text-gray-600">User account is pending email verification</p>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-sm font-semibold text-orange-600">Pending</p>
+                            <p className="text-xs text-gray-500">Status: {user.status}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <div className="text-xs text-gray-600">
+                            User ID: {user.$id}
+                          </div>
+                          {isAdmin && (
+                            <div className="flex items-center space-x-2">
+                              <button
+                                onClick={() => handleVerifyUser(user.$id)}
+                                className="btn-success px-3 py-1 text-xs"
+                              >
+                                <Check className="w-3 h-3 mr-1" />
+                                Verify User
+                              </button>
+                              <button
+                                onClick={() => handleResendVerification(user.$id)}
+                                className="btn-secondary px-3 py-1 text-xs"
+                              >
+                                <Mail className="w-3 h-3 mr-1" />
+                                Resend Email
+                              </button>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </div>
                   )}

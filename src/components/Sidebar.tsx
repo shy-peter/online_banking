@@ -92,7 +92,7 @@ const Sidebar = () => {
         <div className="fixed top-4 left-4 z-50">
           <button
             onClick={() => setIsOpen(!isOpen)}
-            className="p-2 bg-white rounded-lg shadow-soft border border-gray-200"
+            className="p-2 bg-[#d8ed36] rounded-lg shadow-soft border border-gray-200"
           >
             {isOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>
@@ -106,7 +106,7 @@ const Sidebar = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-gray-900 bg-opacity-50 z-40"
+            className="fixed inset-0 bg-black bg-opacity-50 z-40"
             onClick={() => setIsOpen(false)}
           />
         )}
@@ -114,33 +114,33 @@ const Sidebar = () => {
 
       {/* Sidebar */}
       {isDesktop ? (
-        <div className="w-64 bg-white border-r border-gray-200 h-screen">
+        <div className="w-64 bg-black border-r border-gray-800 h-screen">
           <div className="flex flex-col h-full">
             {/* Logo */}
-            <div className="flex items-center px-6 py-6 border-b border-gray-200">
+            <div className="flex items-center px-6 py-6 border-b border-gray-800">
               <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 bg-gradient-to-r from-primary-600 to-primary-700 rounded-lg flex items-center justify-center">
-                  <DollarSign className="w-5 h-5 text-white" />
+                <div className="w-8 h-8 bg-[#d8ed36] rounded-lg flex items-center justify-center">
+                  <DollarSign className="w-5 h-5 text-black" />
                 </div>
                 <div>
-                  <h2 className="text-xl font-bold text-gray-900">InvestFlow</h2>
-                  <p className="text-xs text-gray-500">Smart Investment Platform</p>
+                  <h2 className="text-xl font-bold text-white">InvestFlow</h2>
+                  <p className="text-xs text-gray-400">Smart Investment Platform</p>
                 </div>
               </div>
             </div>
 
             {/* User info */}
             {userProfile && (
-              <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
+              <div className="px-6 py-4 border-b border-gray-800 bg-gray-900">
                 <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-primary-600 rounded-full flex items-center justify-center">
-                    <span className="text-sm font-semibold text-white">
+                  <div className="w-10 h-10 bg-[#d8ed36] rounded-full flex items-center justify-center">
+                    <span className="text-sm font-semibold text-black">
                       {userProfile.name?.charAt(0).toUpperCase()}
                     </span>
                   </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center space-x-2 mb-1">
-                    <p className="text-sm font-medium text-gray-900 truncate">
+                    <p className="text-sm font-medium text-white truncate">
                       {userProfile.name}
                     </p>
                     <VerificationBadge 
@@ -149,7 +149,7 @@ const Sidebar = () => {
                       showText={false}
                     />
                   </div>
-                  <p className="text-xs text-gray-500 truncate">
+                  <p className="text-xs text-gray-400 truncate">
                     Investment Plan
                   </p>
                   {userProfile.accountNumber && (
@@ -174,12 +174,12 @@ const Sidebar = () => {
                     to={item.href}
                     className={`w-full flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors ${
                       isActive
-                        ? 'bg-primary-100 text-primary-700 border border-primary-200'
-                        : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                        ? 'bg-[#d8ed36] text-black border border-[#d8ed36]'
+                        : 'text-gray-300 hover:bg-gray-800 hover:text-white'
                     }`}
                   >
                     <Icon className={`mr-3 h-5 w-5 ${
-                      isActive ? 'text-primary-600' : 'text-gray-400'
+                      isActive ? 'text-black' : 'text-gray-400'
                     }`} />
                     {item.name}
                   </NavLink>
@@ -188,10 +188,10 @@ const Sidebar = () => {
             </nav>
 
             {/* Logout button */}
-            <div className="p-4 border-t border-gray-200">
+            <div className="p-4 border-t border-gray-800">
               <button
                 onClick={handleLogout}
-                className="w-full flex items-center px-4 py-3 text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900 rounded-lg transition-colors"
+                className="w-full flex items-center px-4 py-3 text-sm font-medium text-gray-300 hover:bg-gray-800 hover:text-white rounded-lg transition-colors"
               >
                 <LogOut className="mr-3 h-5 w-5 text-gray-400" />
                 Logout
@@ -205,34 +205,34 @@ const Sidebar = () => {
           animate={{
             x: isOpen ? 0 : -280,
           }}
-          className="fixed inset-y-0 left-0 z-40 w-64 bg-white border-r border-gray-200 shadow-soft-lg"
+          className="fixed inset-y-0 left-0 z-40 w-64 bg-black border-r border-gray-800 shadow-soft-lg"
         >
           <div className="flex flex-col h-full">
             {/* Logo */}
-            <div className="flex items-center px-6 py-6 border-b border-gray-200">
+            <div className="flex items-center px-6 py-6 border-b border-gray-800">
               <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 bg-gradient-to-r from-primary-600 to-primary-700 rounded-lg flex items-center justify-center">
-                  <DollarSign className="w-5 h-5 text-white" />
+                <div className="w-8 h-8 bg-[#d8ed36] rounded-lg flex items-center justify-center">
+                  <DollarSign className="w-5 h-5 text-black" />
                 </div>
                 <div>
-                  <h2 className="text-xl font-bold text-gray-900">InvestFlow</h2>
-                  <p className="text-xs text-gray-500">Smart Investment Platform</p>
+                  <h2 className="text-xl font-bold text-white">InvestFlow</h2>
+                  <p className="text-xs text-gray-400">Smart Investment Platform</p>
                 </div>
               </div>
             </div>
 
             {/* User info */}
             {userProfile && (
-              <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
+              <div className="px-6 py-4 border-b border-gray-800 bg-gray-900">
                 <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-primary-600 rounded-full flex items-center justify-center">
-                    <span className="text-sm font-semibold text-white">
+                  <div className="w-10 h-10 bg-[#d8ed36] rounded-full flex items-center justify-center">
+                    <span className="text-sm font-semibold text-black">
                       {userProfile.name?.charAt(0).toUpperCase()}
                     </span>
                   </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center space-x-2 mb-1">
-                    <p className="text-sm font-medium text-gray-900 truncate">
+                    <p className="text-sm font-medium text-white truncate">
                       {userProfile.name}
                     </p>
                     <VerificationBadge 
@@ -241,7 +241,7 @@ const Sidebar = () => {
                       showText={false}
                     />
                   </div>
-                  <p className="text-xs text-gray-500 truncate">
+                  <p className="text-xs text-gray-400 truncate">
                     Investment Plan
                   </p>
                   {userProfile.accountNumber && (
@@ -267,12 +267,12 @@ const Sidebar = () => {
                     onClick={() => setIsOpen(false)}
                     className={`w-full flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors ${
                       isActive
-                        ? 'bg-primary-100 text-primary-700 border border-primary-200'
-                        : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                        ? 'bg-[#d8ed36] text-black border border-[#d8ed36]'
+                        : 'text-gray-300 hover:bg-gray-800 hover:text-white'
                     }`}
                   >
                     <Icon className={`mr-3 h-5 w-5 ${
-                      isActive ? 'text-primary-600' : 'text-gray-400'
+                      isActive ? 'text-black' : 'text-gray-400'
                     }`} />
                     {item.name}
                   </NavLink>
@@ -281,10 +281,10 @@ const Sidebar = () => {
             </nav>
 
             {/* Logout button */}
-            <div className="p-4 border-t border-gray-200">
+            <div className="p-4 border-t border-gray-800">
               <button
                 onClick={handleLogout}
-                className="w-full flex items-center px-4 py-3 text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900 rounded-lg transition-colors"
+                className="w-full flex items-center px-4 py-3 text-sm font-medium text-gray-300 hover:bg-gray-800 hover:text-white rounded-lg transition-colors"
               >
                 <LogOut className="mr-3 h-5 w-5 text-gray-400" />
                 Logout

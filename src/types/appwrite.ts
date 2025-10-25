@@ -22,7 +22,7 @@ export interface UserProfile {
   accountNumber: string;
   totalBalance: number;
   availableBalance: number;
-  status: 'active' | 'inactive' | 'suspended';
+  status: 'active' | 'inactive' | 'suspended' | 'pending_verification';
   isVerified: boolean;
   verificationStatus: 'pending' | 'verified' | 'rejected' | 'incomplete';
   verificationDate?: string;
@@ -295,6 +295,14 @@ export interface AuthContextType {
   createTransfer: (recipientIdentifier: string, amount: number, description?: string, balanceType?: 'available' | 'invested') => Promise<{ success: boolean; error?: string; transfer?: Transfer }>;
   fetchUserTransfers: () => Promise<void>;
   validateRecipient: (identifier: string) => Promise<{ success: boolean; recipient?: UserProfile; error?: string }>;
+  
+  // Email verification functions
+  verifyEmail: (userId: string, secret: string) => Promise<{ success: boolean; error?: string }>;
+  resendVerificationEmail: () => Promise<{ success: boolean; error?: string }>;
+  
+  // Password recovery functions
+  sendPasswordRecoveryEmail: (email: string) => Promise<{ success: boolean; error?: string }>;
+  resetPassword: (userId: string, secret: string, newPassword: string) => Promise<{ success: boolean; error?: string }>;
   
   // Admin functions
   databases: any;

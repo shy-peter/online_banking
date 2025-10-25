@@ -1,0 +1,35 @@
+# Manual Commands to Update Appwrite Users Collection Schema
+# Run these commands one by one in your terminal
+
+# Prerequisites:
+# 1. Install Appwrite CLI: npm install -g appwrite-cli
+# 2. Login to Appwrite: appwrite login
+# 3. Make sure you're in the correct project
+
+# Database and Collection IDs
+DATABASE_ID="investflow-db"
+COLLECTION_ID="users"
+
+# Command 1: Add secretPhrase attribute (string, 255 chars, optional)
+appwrite databases createStringAttribute --databaseId="investflow-db" --collectionId="users" --key="secretPhrase" --size=255 --required=false --default="" --array=false
+
+# Command 2: Add documents attribute (string/JSON, 10KB, optional)
+appwrite databases createStringAttribute --databaseId="investflow-db" --collectionId="users" --key="documents" --size=10000 --required=false --default="{}" --array=false
+
+# Command 3: Add personalInfo attribute (string/JSON, 10KB, optional)
+appwrite databases createStringAttribute --databaseId="investflow-db" --collectionId="users" --key="personalInfo" --size=10000 --required=false --default="{}" --array=false
+
+# Command 4: Add isVerified attribute (boolean, optional, default: false)
+appwrite databases createBooleanAttribute --databaseId="investflow-db" --collectionId="users" --key="isVerified" --required=false --default=false --array=false
+
+# Command 5: Add verificationStatus attribute (string, 50 chars, optional, default: "pending")
+appwrite databases createStringAttribute --databaseId="investflow-db" --collectionId="users" --key="verificationStatus" --size=50 --required=false --default="pending" --array=false
+
+# After running all commands, update your AuthContext.tsx to include these fields:
+# - secretPhrase: string
+# - documents: object (stored as JSON string)
+# - personalInfo: object (stored as JSON string)
+# - isVerified: boolean
+# - verificationStatus: string
+
+# Note: If any attribute already exists, you'll get an error but can continue with the others.

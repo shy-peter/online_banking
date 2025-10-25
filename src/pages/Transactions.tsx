@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Search,
   Filter,
@@ -39,6 +39,7 @@ const Transactions = () => {
     terminateAllOtherSessions
   } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [filter, setFilter] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [dateFilter, setDateFilter] = useState('all');
@@ -46,8 +47,32 @@ const Transactions = () => {
   const [selectedTransaction, setSelectedTransaction] = useState(null);
   const [showTransactionDetails, setShowTransactionDetails] = useState(false);
   const [showLoginHistory, setShowLoginHistory] = useState(false);
-  const [selectedUserForDetails, setSelectedUserForDetails] = useState(null);
+  const [selectedUserForDetails, setSelectedUserForDetails] = useState<any>(null);
   const [showUserDetails, setShowUserDetails] = useState(false);
+
+  // Handle URL filter parameter
+  useEffect(() => {
+    const urlFilter = searchParams.get('filter');
+    if (urlFilter) {
+      // Map dashboard filter types to transaction filter values
+      switch (urlFilter) {
+        case 'totalInvested':
+          setFilter('investment');
+          break;
+        case 'totalEarnings':
+          setFilter('earning');
+          break;
+        case 'activeInvestments':
+          setFilter('investment');
+          break;
+        case 'pendingTransactions':
+          setFilter('pending');
+          break;
+        default:
+          setFilter('all');
+      }
+    }
+  }, [searchParams]);
 
   // Check if user is admin
   const isAdmin = userProfile?.email?.includes('admin') || userProfile?.name?.includes('Admin');
@@ -83,7 +108,7 @@ const Transactions = () => {
     return matchesFilter && matchesSearch && matchesDate;
   });
 
-  const getTransactionIcon = (type) => {
+  const getTransactionIcon = (type: string) => {
     switch (type) {
       case 'investment':
         return <TrendingUp className="w-5 h-5" />;
@@ -96,7 +121,7 @@ const Transactions = () => {
     }
   };
 
-  const getStatusIcon = (status) => {
+  const getStatusIcon = (status: string) => {
     switch (status) {
       case 'completed':
         return <CheckCircle className="w-4 h-4 text-success-500" />;
@@ -109,7 +134,7 @@ const Transactions = () => {
     }
   };
 
-  const getStatusColor = (status) => {
+  const getStatusColor = (status: string) => {
     switch (status) {
       case 'completed':
         return 'text-success-600';
@@ -122,7 +147,7 @@ const Transactions = () => {
     }
   };
 
-  const getTransactionColor = (type) => {
+  const getTransactionColor = (type: string) => {
     switch (type) {
       case 'investment':
         return 'bg-primary-100 text-primary-600';
@@ -139,18 +164,18 @@ const Transactions = () => {
   const totalInvested = investments.reduce((sum, inv) => sum + (inv.status === 'active' ? inv.amount : 0), 0);
 
   const totalEarnings = transactions
-    .filter(t => (t.type === 'earning' || t.type === 'transfer_in') && t.status === 'completed')
+    .filter(t => t.type === 'earning' && t.status === 'completed')
     .reduce((sum, t) => sum + t.amount, 0);
 
   const totalWithdrawals = transactions
-    .filter(t => (t.type === 'withdrawal' || t.type === 'transfer_out') && t.status === 'completed')
+    .filter(t => t.type === 'withdrawal' && t.status === 'completed')
     .reduce((sum, t) => sum + t.amount, 0);
   
   const availableBalance = totalEarnings - totalWithdrawals;
 
   const pendingTransactions = transactions.filter(t => t.status === 'pending').length;
 
-  const handleViewTransactionDetails = (transaction) => {
+  const handleViewTransactionDetails = (transaction: any) => {
     setSelectedTransaction(transaction);
     setShowTransactionDetails(true);
   };
@@ -278,7 +303,7 @@ const Transactions = () => {
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm font-medium text-gray-600">Total Invested</p>
-                      <p className="text-2xl font-bold text-gray-900 mt-2">
+                      <p className="text-2xl font-bold text-white mt-2">
                         {formatCurrency(totalInvested)}
                       </p>
                     </div>
@@ -294,7 +319,7 @@ const Transactions = () => {
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm font-medium text-gray-600">Total Earnings</p>
-                      <p className="text-2xl font-bold text-gray-900 mt-2">
+                      <p className="text-2xl font-bold text-white mt-2">
                         {formatCurrency(totalEarnings)}
                       </p>
                     </div>
@@ -310,7 +335,7 @@ const Transactions = () => {
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm font-medium text-gray-600">Total Withdrawals</p>
-                      <p className="text-2xl font-bold text-gray-900 mt-2">
+                      <p className="text-2xl font-bold text-white mt-2">
                         {formatCurrency(totalWithdrawals)}
                       </p>
                     </div>
@@ -326,7 +351,7 @@ const Transactions = () => {
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm font-medium text-gray-600">Available Balance</p>
-                      <p className="text-2xl font-bold text-gray-900 mt-2">
+                      <p className="text-2xl font-bold text-white mt-2">
                         {formatCurrency(availableBalance)}
                       </p>
                       <p className="text-xs text-gray-500 mt-1">
@@ -345,7 +370,7 @@ const Transactions = () => {
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm font-medium text-gray-600">Pending</p>
-                      <p className="text-2xl font-bold text-gray-900 mt-2">
+                      <p className="text-2xl font-bold text-white mt-2">
                         {pendingTransactions}
                       </p>
                     </div>
@@ -439,23 +464,23 @@ const Transactions = () => {
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.3, delay: index * 0.05 }}
-                        className="p-6 hover:bg-gray-50 transition-colors duration-200"
+                        className="p-4 hover:bg-gray-50 transition-colors duration-200"
                       >
                         <div className="flex items-center justify-between">
                           <div className="flex items-center space-x-4">
-                            <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${
+                            <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
                               getTransactionColor(transaction.type)
                             }`}>
                               {getTransactionIcon(transaction.type)}
                             </div>
                             <div>
                               <div className="flex items-center space-x-3">
-                                <h4 className="text-base font-semibold text-gray-900 capitalize">
+                                <h4 className="text-sm font-semibold text-gray-900 capitalize">
                                   {transaction.type}
                                 </h4>
                                 {getStatusIcon(transaction.status)}
                               </div>
-                              <div className="flex items-center space-x-4 mt-1 text-sm text-gray-600">
+                              <div className="flex items-center space-x-4 mt-0.5 text-xs text-gray-600">
                                 <span className="capitalize">{transaction.paymentMethod || 'N/A'}</span>
                                 <span className="text-gray-400">•</span>
                                 <span>{new Date(transaction.$createdAt).toLocaleDateString('en-US')}</span>
@@ -470,7 +495,7 @@ const Transactions = () => {
                           </div>
                           
                           <div className="text-right">
-                            <p className={`text-lg font-bold ${
+                            <p className={`text-base font-bold ${
                               transaction.type === 'earning' ? 'text-success-600' :
                               transaction.type === 'withdrawal' ? 'text-orange-600' :
                               'text-gray-900'
@@ -479,12 +504,12 @@ const Transactions = () => {
                                transaction.type === 'withdrawal' ? '-' : ''}
                               {formatCurrency(transaction.amount)}
                             </p>
-                            <p className={`text-sm font-medium capitalize ${getStatusColor(transaction.status)}`}>
+                            <p className={`text-xs font-medium capitalize ${getStatusColor(transaction.status)}`}>
                               {transaction.status}
                             </p>
                             
                             {/* Action buttons */}
-                            <div className="flex space-x-2 mt-2">
+                            <div className="flex space-x-2 mt-1">
                               <button
                                 onClick={() => handleViewTransactionDetails(transaction)}
                                 className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded hover:bg-blue-200 transition-colors flex items-center space-x-1"
@@ -515,8 +540,8 @@ const Transactions = () => {
                         </div>
                         
                         {transaction.description && (
-                          <div className="mt-3 pl-16">
-                            <p className="text-sm text-gray-600">{transaction.description}</p>
+                          <div className="mt-2 pl-14">
+                            <p className="text-xs text-gray-600">{transaction.description}</p>
                           </div>
                         )}
                       </motion.div>
@@ -581,7 +606,6 @@ const Transactions = () => {
                 <div className="space-y-4">
                   {transfers.map((transfer) => {
                     const isOutgoing = transfer.fromUserId === userProfile?.userId;
-                    const isIncoming = transfer.toUserId === userProfile?.userId;
                     
                     return (
                       <div
@@ -675,8 +699,8 @@ const Transactions = () => {
         isOpen={showUserDetails}
         onClose={handleCloseUserDetails}
         user={selectedUserForDetails}
-        transactions={transactions.filter(t => t.userId === selectedUserForDetails?.userId)}
-        investments={investments.filter(i => i.userId === selectedUserForDetails?.userId)}
+        transactions={selectedUserForDetails ? transactions.filter(t => t.userId === selectedUserForDetails.userId) : []}
+        investments={selectedUserForDetails ? investments.filter(i => i.userId === selectedUserForDetails.userId) : []}
         paymentMethods={[]}
         isAdmin={isAdmin}
       />

@@ -10,7 +10,6 @@ import {
   Eye,
   EyeOff,
   Clock,
-  X,
   Send
 } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area, PieChart, Pie, Cell, Legend } from 'recharts';
@@ -29,8 +28,6 @@ const Dashboard = () => {
   const [showInvestmentModal, setShowInvestmentModal] = useState(false);
   const [showWithdrawalModal, setShowWithdrawalModal] = useState(false);
   const [showTransferModal, setShowTransferModal] = useState(false);
-  const [activeFilter, setActiveFilter] = useState<string | null>(null);
-  const [showFilteredTransactions, setShowFilteredTransactions] = useState(false);
 
   // Calculate dashboard metrics
   const totalInvested = investments.reduce((sum, inv) => sum + (inv.status === 'active' ? inv.amount : 0), 0);
@@ -53,31 +50,11 @@ const Dashboard = () => {
     return sum;
   }, 0);
 
-  // Handle card clicks to filter transactions
+  // Handle card clicks to navigate to transactions page
   const handleCardClick = (filterType: string) => {
-    setActiveFilter(filterType);
-    setShowFilteredTransactions(true);
+    // Navigate to transactions page with the appropriate filter
+    navigate(`/transactions?filter=${filterType}`);
   };
-
-  // Get filtered transactions based on active filter
-  const getFilteredTransactions = () => {
-    if (!activeFilter) return [];
-    
-    switch (activeFilter) {
-      case 'totalInvested':
-        return transactions.filter(t => t.type === 'investment' && t.status === 'completed');
-      case 'totalEarnings':
-        return transactions.filter(t => t.type === 'earning' && t.status === 'completed');
-      case 'activeInvestments':
-        return transactions.filter(t => t.type === 'investment' && t.status === 'completed');
-      case 'pendingTransactions':
-        return transactions.filter(t => t.status === 'pending');
-      default:
-        return [];
-    }
-  };
-
-  const filteredTransactions = getFilteredTransactions();
 
   // Generate chart data for the last 12 months
   useEffect(() => {
@@ -184,10 +161,9 @@ const Dashboard = () => {
     }
   ];
 
-  const recentTransactions = transactions.slice(0, 5);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 p-6">
       {/* Action Buttons */}
       <motion.div
         initial={{ opacity: 0, y: -20 }}
@@ -196,10 +172,10 @@ const Dashboard = () => {
         className="flex items-center justify-between"
       >
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">
+          <h1 className="text-2xl font-bold text-white">
             Portfolio Overview 📊
           </h1>
-          <p className="text-gray-600 mt-1">
+          <p className="text-gray-300 mt-1">
             Here's your investment portfolio summary
           </p>
         </div>
@@ -229,10 +205,10 @@ const Dashboard = () => {
           </div>
           <button
             onClick={() => setShowBalance(!showBalance)}
-            className="flex items-center space-x-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors duration-200"
+            className="flex items-center space-x-2 px-4 py-2 bg-gray-800 hover:bg-gray-700 rounded-lg transition-colors duration-200"
           >
             {showBalance ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
-            <span className="text-sm font-medium">
+            <span className="text-sm font-medium text-white">
               {showBalance ? 'Hide Balance' : 'Show Balance'}
             </span>
           </button>
@@ -259,7 +235,7 @@ const Dashboard = () => {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-gray-600">{stat.title}</p>
-                    <p className="text-2xl font-bold text-gray-900 mt-2">{stat.value}</p>
+                    <p className="text-2xl font-bold text-white mt-2">{stat.value}</p>
                   </div>
                   <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${
                     stat.color === 'primary' ? 'bg-primary-100' :
@@ -431,212 +407,7 @@ const Dashboard = () => {
         </motion.div>
       </div>
 
-      {/* Recent Activity */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, delay: 0.4 }}
-        className="card"
-      >
-        <div className="card-header">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-lg font-semibold text-gray-900">Recent Transactions</h3>
-              <p className="text-sm text-gray-600 mt-1">Your latest investment activities</p>
-            </div>
-            <button className="text-primary-600 hover:text-primary-700 text-sm font-medium">
-              View All
-            </button>
-          </div>
-        </div>
-        <div className="card-body p-0">
-          {recentTransactions.length > 0 ? (
-            <div className="divide-y divide-gray-200">
-              {recentTransactions.map((transaction, index) => (
-                <div key={index} className="p-6 flex items-center justify-between hover:bg-gray-50 transition-colors duration-200">
-                  <div className="flex items-center space-x-4">
-                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-                      transaction.type === 'investment' ? 'bg-primary-100' : 
-                      transaction.type === 'earning' ? 'bg-success-100' : 'bg-gray-100'
-                    }`}>
-                      {transaction.type === 'investment' ? (
-                        <TrendingUp className={`w-5 h-5 ${
-                          transaction.type === 'investment' ? 'text-primary-600' : 'text-gray-600'
-                        }`} />
-                      ) : (
-                        <DollarSign className={`w-5 h-5 ${
-                          transaction.type === 'earning' ? 'text-success-600' : 'text-gray-600'
-                        }`} />
-                      )}
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-gray-900 capitalize">
-                        {transaction.type} - {transaction.paymentMethod}
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        {new Date(transaction.$createdAt).toLocaleDateString('en-US')} at {new Date(transaction.$createdAt).toLocaleTimeString('en-US', { 
-                          hour: '2-digit', 
-                          minute: '2-digit',
-                          hour12: true 
-                        })}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <p className={`text-sm font-semibold ${
-                      transaction.type === 'earning' ? 'text-success-600' : 'text-gray-900'
-                    }`}>
-                      {transaction.type === 'earning' ? '+' : ''}{formatCurrency(transaction.amount)}
-                    </p>
-                    <p className={`text-xs ${
-                      transaction.status === 'completed' ? 'text-success-600' :
-                      transaction.status === 'pending' ? 'text-yellow-600' : 'text-gray-500'
-                    }`}>
-                      {transaction.status}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="p-12 text-center">
-              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <DollarSign className="w-8 h-8 text-gray-400" />
-              </div>
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No transactions yet</h3>
-              <p className="text-gray-600 mb-6">Start your investment journey to see your transactions here</p>
-              <button 
-                onClick={() => setShowInvestmentModal(true)}
-                className="btn-primary px-6 py-3"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Make Your First Investment
-              </button>
-            </div>
-          )}
-        </div>
-      </motion.div>
 
-      {/* Filtered Transactions Section */}
-      {showFilteredTransactions && activeFilter && (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -20 }}
-          className="card"
-        >
-          <div className="card-header">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900">
-                  {activeFilter === 'totalInvested' && 'Investment Transactions'}
-                  {activeFilter === 'totalEarnings' && 'Earnings Transactions'}
-                  {activeFilter === 'activeInvestments' && 'Active Investment Transactions'}
-                  {activeFilter === 'pendingTransactions' && 'Pending Transactions'}
-                </h3>
-                <p className="text-sm text-gray-600 mt-1">
-                  {filteredTransactions.length} transaction{filteredTransactions.length !== 1 ? 's' : ''} found
-                </p>
-              </div>
-              <button
-                onClick={() => {
-                  setShowFilteredTransactions(false);
-                  setActiveFilter(null);
-                }}
-                className="text-gray-400 hover:text-gray-600 transition-colors duration-200"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-          </div>
-          <div className="card-body p-0">
-            {filteredTransactions.length > 0 ? (
-              <div className="divide-y divide-gray-200">
-                {filteredTransactions.map((transaction, index) => (
-                  <motion.div
-                    key={transaction.$id || index}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.3, delay: index * 0.05 }}
-                    className="p-6 hover:bg-gray-50 transition-colors duration-200"
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-4">
-                        <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${
-                          transaction.type === 'earning' ? 'bg-success-100' :
-                          transaction.type === 'withdrawal' ? 'bg-orange-100' :
-                          transaction.type === 'investment' ? 'bg-primary-100' :
-                          'bg-gray-100'
-                        }`}>
-                          {transaction.type === 'earning' ? (
-                            <TrendingUp className="w-6 h-6 text-success-600" />
-                          ) : transaction.type === 'withdrawal' ? (
-                            <ArrowDownRight className="w-6 h-6 text-orange-600" />
-                          ) : transaction.type === 'investment' ? (
-                            <Plus className="w-6 h-6 text-primary-600" />
-                          ) : (
-                            <DollarSign className="w-6 h-6 text-gray-600" />
-                          )}
-                        </div>
-                        <div>
-                          <div className="flex items-center space-x-3">
-                            <h4 className="text-base font-semibold text-gray-900 capitalize">
-                              {transaction.type}
-                            </h4>
-                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                              transaction.status === 'completed' ? 'bg-success-100 text-success-800' :
-                              transaction.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                              transaction.status === 'failed' ? 'bg-danger-100 text-danger-800' :
-                              'bg-gray-100 text-gray-800'
-                            }`}>
-                              {transaction.status}
-                            </span>
-                          </div>
-                          <div className="flex items-center space-x-4 mt-1 text-sm text-gray-600">
-                            <span className="capitalize">{transaction.paymentMethod || 'N/A'}</span>
-                            <span className="text-gray-400">•</span>
-                            <span>{new Date(transaction.$createdAt).toLocaleDateString('en-US')} at {new Date(transaction.$createdAt).toLocaleTimeString('en-US', { 
-                              hour: '2-digit', 
-                              minute: '2-digit',
-                              hour12: true 
-                            })}</span>
-                          </div>
-                          {transaction.description && (
-                            <p className="text-sm text-gray-500 mt-1">{transaction.description}</p>
-                          )}
-                        </div>
-                      </div>
-                      
-                      <div className="text-right">
-                        <p className={`text-lg font-bold ${
-                          transaction.type === 'earning' ? 'text-success-600' :
-                          transaction.type === 'withdrawal' ? 'text-orange-600' :
-                          'text-gray-900'
-                        }`}>
-                          {transaction.type === 'earning' ? '+' : 
-                           transaction.type === 'withdrawal' ? '-' : ''}
-                          {formatCurrency(transaction.amount)}
-                        </p>
-                        {transaction.reference && (
-                          <p className="text-xs text-gray-500 mt-1">Ref: {transaction.reference}</p>
-                        )}
-                      </div>
-                    </div>
-                  </motion.div>
-                ))}
-              </div>
-            ) : (
-              <div className="p-12 text-center">
-                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <DollarSign className="w-8 h-8 text-gray-400" />
-                </div>
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No transactions found</h3>
-                <p className="text-gray-600">No transactions match the selected filter</p>
-              </div>
-            )}
-          </div>
-        </motion.div>
-      )}
 
       {/* Investment Modal */}
       <AnimatePresence>

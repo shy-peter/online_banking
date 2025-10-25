@@ -1,0 +1,8 @@
+<svg width="400" height="300" viewBox="0 0 400 300" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="400" height="300" fill="#1f2937"/>
+  <rect x="50" y="50" width="300" height="200" rx="20" fill="#374151"/>
+  <circle cx="200" cy="120" r="30" fill="#d8ed36"/>
+  <path d="M185 120L195 130L215 110" stroke="#000" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="200" y="180" text-anchor="middle" fill="#d8ed36" font-family="Arial, sans-serif" font-size="18" font-weight="bold">Security Shield</text>
+  <text x="200" y="200" text-anchor="middle" fill="#9ca3af" font-family="Arial, sans-serif" font-size="12">Protecting your investments</text>
+</svg>

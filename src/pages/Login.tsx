@@ -1,9 +1,11 @@
-import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Eye, EyeOff, Mail, Lock, DollarSign } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import LoadingSpinner from '../components/LoadingSpinner';
+import ConsentModal from '../components/ConsentModal';
+import ForgotPasswordModal from '../components/ForgotPasswordModal';
 
 const Login = () => {
   const navigate = useNavigate();
@@ -13,10 +15,12 @@ const Login = () => {
   });
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [errors, setErrors] = useState({});
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [showConsentModal, setShowConsentModal] = useState(false);
+  const [showForgotPasswordModal, setShowForgotPasswordModal] = useState(false);
   const { login } = useAuth();
 
-  const handleChange = (e) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
     
@@ -27,7 +31,7 @@ const Login = () => {
   };
 
   const validateForm = () => {
-    const newErrors = {};
+    const newErrors: Record<string, string> = {};
     
     if (!formData.email.trim()) {
       newErrors.email = 'Email is required';
@@ -43,7 +47,7 @@ const Login = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!validateForm()) return;
@@ -56,7 +60,7 @@ const Login = () => {
       if (result.success) {
         navigate('/dashboard');
       } else {
-        setErrors({ general: result.error });
+        setErrors({ general: result.error || 'Login failed' });
       }
     } catch (error) {
       setErrors({ general: 'Login failed. Please try again.' });
@@ -65,9 +69,30 @@ const Login = () => {
     }
   };
 
+  const handleSignupClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setShowConsentModal(true);
+  };
+
+  const handleConsentAccept = () => {
+    setShowConsentModal(false);
+    navigate('/register');
+  };
+
+  const handleConsentReject = () => {
+    setShowConsentModal(false);
+    // Stay on login page
+  };
+
+  const handleConsentClose = () => {
+    setShowConsentModal(false);
+    // Stay on login page
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary-50 via-white to-success-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md mx-auto">
+    <div className="min-h-screen bg-black py-12 px-4 sm:px-6 lg:px-8">
+      <div className="absolute inset-0 bg-gradient-to-br from-black via-gray-900 to-black"></div>
+      <div className="relative max-w-md mx-auto">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
@@ -76,13 +101,13 @@ const Login = () => {
           className="text-center mb-8"
         >
           <div className="flex items-center justify-center mb-6">
-            <div className="w-12 h-12 bg-gradient-to-r from-primary-600 to-primary-700 rounded-xl flex items-center justify-center">
-              <DollarSign className="w-7 h-7 text-white" />
+            <div className="w-12 h-12 bg-[#d8ed36] rounded-xl flex items-center justify-center">
+              <DollarSign className="w-7 h-7 text-black" />
             </div>
-            <h1 className="text-3xl font-bold text-gray-900 ml-3">InvestFlow</h1>
+            <h1 className="text-3xl font-bold text-white ml-3">InvestFlow</h1>
           </div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Welcome back</h2>
-          <p className="text-gray-600">Sign in to your account to continue investing</p>
+          <h2 className="text-2xl font-bold text-white mb-2">Welcome back</h2>
+          <p className="text-gray-300">Sign in to your account to continue investing</p>
         </motion.div>
 
         {/* Form */}
@@ -91,18 +116,18 @@ const Login = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.1 }}
         >
-          <div className="card">
-            <div className="card-body p-8">
+          <div className="bg-gray-900 rounded-2xl shadow-2xl border border-gray-800">
+            <div className="p-8">
               <form onSubmit={handleSubmit} className="space-y-6">
                 {errors.general && (
-                  <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md">
+                  <div className="bg-red-900 border border-red-700 text-red-300 px-4 py-3 rounded-md">
                     {errors.general}
                   </div>
                 )}
 
                 {/* Email Field */}
                 <div>
-                  <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+                  <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-2">
                     Email Address
                   </label>
                   <div className="relative">
@@ -116,16 +141,16 @@ const Login = () => {
                       required
                       value={formData.email}
                       onChange={handleChange}
-                      className={`input-field pl-10 ${errors.email ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : ''}`}
+                      className={`bg-gray-800 border border-gray-700 text-white w-full placeholder-gray-400 pl-10 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#d8ed36] focus:border-transparent ${errors.email ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}`}
                       placeholder="Enter your email address"
                     />
                   </div>
-                  {errors.email && <p className="mt-1 text-sm text-red-600">{errors.email}</p>}
+                  {errors.email && <p className="mt-1 text-sm text-red-400">{errors.email}</p>}
                 </div>
 
                 {/* Password Field */}
                 <div>
-                  <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
+                  <label htmlFor="password" className="block text-sm font-medium text-gray-300 mb-2">
                     Password
                   </label>
                   <div className="relative">
@@ -139,7 +164,7 @@ const Login = () => {
                       required
                       value={formData.password}
                       onChange={handleChange}
-                      className={`input-field pl-10 pr-10 ${errors.password ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : ''}`}
+                      className={`bg-gray-800 border border-gray-700 text-white w-full placeholder-gray-400 pl-10 pr-10 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#d8ed36] focus:border-transparent ${errors.password ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}`}
                       placeholder="Enter your password"
                     />
                     <button
@@ -148,13 +173,13 @@ const Login = () => {
                       onClick={() => setShowPassword(!showPassword)}
                     >
                       {showPassword ? (
-                        <EyeOff className="h-5 w-5 text-gray-400 hover:text-gray-600" />
+                        <EyeOff className="h-5 w-5 text-gray-400 hover:text-[#d8ed36]" />
                       ) : (
-                        <Eye className="h-5 w-5 text-gray-400 hover:text-gray-600" />
+                        <Eye className="h-5 w-5 text-gray-400 hover:text-[#d8ed36]" />
                       )}
                     </button>
                   </div>
-                  {errors.password && <p className="mt-1 text-sm text-red-600">{errors.password}</p>}
+                  {errors.password && <p className="mt-1 text-sm text-red-400">{errors.password}</p>}
                 </div>
 
                 {/* Remember me and forgot password */}
@@ -164,17 +189,21 @@ const Login = () => {
                       id="remember-me"
                       name="remember-me"
                       type="checkbox"
-                      className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+                      className="h-4 w-4 text-[#d8ed36] focus:ring-[#d8ed36] border-gray-600 rounded bg-gray-800"
                     />
-                    <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-700">
+                    <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-300">
                       Remember me
                     </label>
                   </div>
 
                   <div className="text-sm">
-                    <a href="#" className="text-primary-600 hover:text-primary-700 font-medium">
+                    <button 
+                      type="button"
+                      onClick={() => setShowForgotPasswordModal(true)}
+                      className="text-[#d8ed36] hover:text-[#c4d630] font-medium"
+                    >
                       Forgot your password?
-                    </a>
+                    </button>
                   </div>
                 </div>
 
@@ -182,7 +211,7 @@ const Login = () => {
                 <button
                   type="submit"
                   disabled={isLoading}
-                  className="btn-primary w-full py-3 text-lg font-semibold disabled:opacity-50"
+                  className="bg-[#d8ed36] text-black w-full py-3 text-lg font-semibold disabled:opacity-50 rounded-lg hover:bg-[#c4d630] transition-colors"
                 >
                   {isLoading ? (
                     <>
@@ -196,11 +225,14 @@ const Login = () => {
               </form>
 
               <div className="mt-6 text-center">
-                <p className="text-gray-600">
+                <p className="text-gray-300">
                   Don't have an account?{' '}
-                  <Link to="/register" className="text-primary-600 hover:text-primary-700 font-medium">
+                  <button 
+                    onClick={handleSignupClick}
+                    className="text-[#d8ed36] hover:text-[#c4d630] font-medium"
+                  >
                     Sign up
-                  </Link>
+                  </button>
                 </p>
               </div>
             </div>
@@ -214,26 +246,40 @@ const Login = () => {
           transition={{ duration: 0.6, delay: 0.2 }}
           className="mt-8 text-center"
         >
-          <div className="grid grid-cols-2 gap-4 text-sm text-gray-600">
+          <div className="grid grid-cols-2 gap-4 text-sm text-gray-300">
             <div>
-              <div className="font-semibold text-primary-600">Secure Platform</div>
+              <div className="font-semibold text-[#d8ed36]">Secure Platform</div>
               <div>Bank-level security</div>
             </div>
             <div>
-              <div className="font-semibold text-primary-600">High Returns</div>
+              <div className="font-semibold text-[#d8ed36]">High Returns</div>
               <div>Up to 70% annual returns</div>
             </div>
             <div>
-              <div className="font-semibold text-primary-600">Multiple Plans</div>
+              <div className="font-semibold text-[#d8ed36]">Multiple Plans</div>
               <div>Start from $100</div>
             </div>
             <div>
-              <div className="font-semibold text-primary-600">24/7 Support</div>
+              <div className="font-semibold text-[#d8ed36]">24/7 Support</div>
               <div>Always here to help</div>
             </div>
           </div>
         </motion.div>
       </div>
+      
+      {/* Consent Modal */}
+      <ConsentModal
+        isOpen={showConsentModal}
+        onAccept={handleConsentAccept}
+        onReject={handleConsentReject}
+        onClose={handleConsentClose}
+      />
+
+      {/* Forgot Password Modal */}
+      <ForgotPasswordModal
+        isOpen={showForgotPasswordModal}
+        onClose={() => setShowForgotPasswordModal(false)}
+      />
     </div>
   );
 };

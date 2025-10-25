@@ -1,8 +1,8 @@
 import React from 'react';
-import { CheckCircle, Clock, XCircle, AlertCircle } from 'lucide-react';
+import { CheckCircle, Clock, XCircle, AlertCircle, Mail } from 'lucide-react';
 
 interface VerificationBadgeProps {
-  status: 'pending' | 'verified' | 'rejected' | 'incomplete';
+  status: 'pending' | 'verified' | 'rejected' | 'incomplete' | 'email_pending';
   size?: 'sm' | 'md' | 'lg';
   showText?: boolean;
   className?: string;
@@ -47,6 +47,14 @@ const VerificationBadge: React.FC<VerificationBadgeProps> = ({
           textColor: 'text-gray-800',
           iconColor: 'text-gray-600',
           text: 'Incomplete'
+        };
+      case 'email_pending':
+        return {
+          icon: Mail,
+          bgColor: 'bg-blue-100',
+          textColor: 'text-blue-800',
+          iconColor: 'text-blue-600',
+          text: 'Email Pending'
         };
       default:
         return {

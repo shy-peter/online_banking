@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { 
   User, 
@@ -9,19 +9,16 @@ import {
   MapPin, 
   Calendar,
   Briefcase,
-  Building,
-  FileText,
   ArrowRight,
   ArrowLeft,
   Check,
   AlertCircle,
   Shield,
-  DollarSign
+  DollarSign,
+  Eye,
+  EyeOff
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import DocumentUpload from '../components/DocumentUpload';
-import IDDocumentUpload from '../components/IDDocumentUpload';
-import IDDocumentUploadFallback from '../components/IDDocumentUploadFallback';
 import SecretPhraseModal from '../components/SecretPhraseModal';
 import LoadingSpinner from '../components/LoadingSpinner';
 
@@ -45,14 +42,6 @@ interface SignupData {
   annualIncome: string;
   ssn: string; // For US users
   
-  // ID Type and Documents
-  idType: 'drivers-license' | 'passport' | 'state-id' | 'national-id';
-  documents: {
-    front?: { id: string; name: string };
-    back?: { id: string; name: string };
-    dataPage?: { id: string; name: string };
-  };
-  
   // Secret Phrase
   secretPhrase: string;
 }
@@ -65,9 +54,9 @@ const EnhancedSignup = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [showSecretPhraseModal, setShowSecretPhraseModal] = useState(false);
-  const [tempSecretPhrase, setTempSecretPhrase] = useState('');
-  const [tempUserId] = useState(() => `temp-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`);
-  const [useStorageFallback, setUseStorageFallback] = useState(true); // Set to true to use fallback
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [errors] = useState<Record<string, string>>({});
   
   const [formData, setFormData] = useState<SignupData>({
     firstName: '',
@@ -85,16 +74,13 @@ const EnhancedSignup = () => {
     occupation: '',
     annualIncome: '',
     ssn: '',
-    idType: 'drivers-license',
-    documents: {},
     secretPhrase: ''
   });
 
   const steps = [
     { id: 1, title: 'Basic Information', description: 'Your account details' },
     { id: 2, title: 'Personal Information', description: 'Additional details' },
-    { id: 3, title: 'Document Verification', description: 'Upload required documents' },
-    { id: 4, title: 'Security Setup', description: 'Set up your secret phrase' }
+    { id: 3, title: 'Security Setup', description: 'Set up your secret phrase' }
   ];
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -103,30 +89,15 @@ const EnhancedSignup = () => {
       ...prev,
       [name]: value
     }));
+    
+    // Clear error when user starts typing
+    if (error) {
+      setError('');
+    }
   };
 
-  const handleDocumentUpload = (fileId: string, fileName: string, documentSide: string) => {
-    setFormData(prev => ({
-      ...prev,
-      documents: {
-        ...prev.documents,
-        [documentSide]: { id: fileId, name: fileName }
-      }
-    }));
-  };
-
-  const handleDocumentRemove = (documentSide: string) => {
-    setFormData(prev => ({
-      ...prev,
-      documents: {
-        ...prev.documents,
-        [documentSide]: undefined
-      }
-    }));
-  };
 
   const handleSecretPhraseConfirm = async (phrase: string): Promise<boolean> => {
-    setTempSecretPhrase(phrase);
     setFormData(prev => ({
       ...prev,
       secretPhrase: phrase
@@ -166,22 +137,6 @@ const EnhancedSignup = () => {
         }
         break;
       case 3:
-        if (!formData.documents.front) {
-          setError('Please upload the front of your ID document');
-          return false;
-        }
-        // Check if back is required based on ID type
-        if (formData.idType !== 'passport' && !formData.documents.back) {
-          setError('Please upload the back of your ID document');
-          return false;
-        }
-        // For passport, check if data page is uploaded
-        if (formData.idType === 'passport' && !formData.documents.dataPage) {
-          setError('Please upload the data page of your passport');
-          return false;
-        }
-        break;
-      case 4:
         if (!formData.secretPhrase) {
           setError('Please set up your secret phrase');
           return false;
@@ -207,8 +162,12 @@ const EnhancedSignup = () => {
     setError('');
   };
 
-  const handleSubmit = async () => {
-    if (!validateStep(4)) return;
+  const handleSubmit = async (e?: React.MouseEvent) => {
+    if (e) {
+      e.preventDefault();
+    }
+    
+    if (!validateStep(3)) return;
     
     setIsLoading(true);
     setError('');
@@ -221,7 +180,6 @@ const EnhancedSignup = () => {
         {
           phone: formData.phone,
           secretPhrase: formData.secretPhrase,
-          documents: formData.documents,
           personalInfo: {
             firstName: formData.firstName,
             lastName: formData.lastName,
@@ -232,21 +190,20 @@ const EnhancedSignup = () => {
             zipCode: formData.zipCode,
             country: formData.country,
             occupation: formData.occupation,
-            annualIncome: formData.annualIncome,
-            ssn: formData.ssn,
-            idType: formData.idType
+            annualIncome: parseFloat(formData.annualIncome) || 0,
+            ssn: formData.ssn
           }
         }
       );
       
       if (result.success) {
-        navigate('/dashboard');
+        navigate('/verify-email');
       } else {
-        setError(result.error || 'Signup failed');
+        setError(result.error || 'Signup failed. Please check your information and try again.');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Signup error:', error);
-      setError('An error occurred during signup');
+      setError(error.message || 'An error occurred during signup. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -257,102 +214,160 @@ const EnhancedSignup = () => {
       case 1:
         return (
           <div className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label className="form-label">First Name *</label>
+                <label htmlFor="firstName" className="block text-sm font-medium text-gray-300 mb-2">
+                  First Name
+                </label>
                 <div className="relative">
-                  <User className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <User className="h-5 w-5 text-gray-400" />
+                  </div>
                   <input
-                    type="text"
+                    id="firstName"
                     name="firstName"
+                    type="text"
+                    required
                     value={formData.firstName}
                     onChange={handleInputChange}
-                    className="form-input pl-10"
+                    className={`input-field pl-10 ${errors.firstName ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : ''}`}
                     placeholder="Enter your first name"
-                    required
                   />
                 </div>
+                {errors.firstName && <p className="mt-1 text-sm text-red-400">{errors.firstName}</p>}
               </div>
               
               <div>
-                <label className="form-label">Last Name *</label>
+                <label htmlFor="lastName" className="block text-sm font-medium text-gray-300 mb-2">
+                  Last Name
+                </label>
                 <div className="relative">
-                  <User className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <User className="h-5 w-5 text-gray-400" />
+                  </div>
                   <input
-                    type="text"
+                    id="lastName"
                     name="lastName"
+                    type="text"
+                    required
                     value={formData.lastName}
                     onChange={handleInputChange}
-                    className="form-input pl-10"
+                    className={`input-field pl-10 ${errors.lastName ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : ''}`}
                     placeholder="Enter your last name"
-                    required
                   />
                 </div>
+                {errors.lastName && <p className="mt-1 text-sm text-red-400">{errors.lastName}</p>}
               </div>
             </div>
 
             <div>
-              <label className="form-label">Email Address *</label>
+              <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-2">
+                Email Address
+              </label>
               <div className="relative">
-                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Mail className="h-5 w-5 text-gray-400" />
+                </div>
                 <input
-                  type="email"
+                  id="email"
                   name="email"
+                  type="email"
+                  required
                   value={formData.email}
                   onChange={handleInputChange}
-                  className="form-input pl-10"
-                  placeholder="Enter your email"
-                  required
+                  className={`input-field pl-10 ${errors.email ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : ''}`}
+                  placeholder="Enter your email address"
                 />
               </div>
+              {errors.email && <p className="mt-1 text-sm text-red-400">{errors.email}</p>}
             </div>
 
             <div>
-              <label className="form-label">Phone Number *</label>
+              <label htmlFor="phone" className="block text-sm font-medium text-gray-300 mb-2">
+                Phone Number
+              </label>
               <div className="relative">
-                <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Phone className="h-5 w-5 text-gray-400" />
+                </div>
                 <input
-                  type="tel"
+                  id="phone"
                   name="phone"
+                  type="tel"
+                  required
                   value={formData.phone}
                   onChange={handleInputChange}
-                  className="form-input pl-10"
+                  className={`input-field pl-10 ${errors.phone ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : ''}`}
                   placeholder="Enter your phone number"
-                  required
                 />
               </div>
+              {errors.phone && <p className="mt-1 text-sm text-red-400">{errors.phone}</p>}
             </div>
 
             <div>
-              <label className="form-label">Password *</label>
+              <label htmlFor="password" className="block text-sm font-medium text-gray-300 mb-2">
+                Password
+              </label>
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Lock className="h-5 w-5 text-gray-400" />
+                </div>
                 <input
-                  type="password"
+                  id="password"
                   name="password"
+                  type={showPassword ? 'text' : 'password'}
+                  required
                   value={formData.password}
                   onChange={handleInputChange}
-                  className="form-input pl-10"
+                  className={`input-field pl-10 pr-10 ${errors.password ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : ''}`}
                   placeholder="Create a strong password"
-                  required
                 />
+                <button
+                  type="button"
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                  onClick={() => setShowPassword(!showPassword)}
+                >
+                  {showPassword ? (
+                    <EyeOff className="h-5 w-5 text-gray-400 hover:text-gray-600" />
+                  ) : (
+                    <Eye className="h-5 w-5 text-gray-400 hover:text-gray-600" />
+                  )}
+                </button>
               </div>
+              {errors.password && <p className="mt-1 text-sm text-red-400">{errors.password}</p>}
             </div>
 
             <div>
-              <label className="form-label">Confirm Password *</label>
+              <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-300 mb-2">
+                Confirm Password
+              </label>
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Lock className="h-5 w-5 text-gray-400" />
+                </div>
                 <input
-                  type="password"
+                  id="confirmPassword"
                   name="confirmPassword"
+                  type={showConfirmPassword ? 'text' : 'password'}
+                  required
                   value={formData.confirmPassword}
                   onChange={handleInputChange}
-                  className="form-input pl-10"
+                  className={`input-field pl-10 pr-10 ${errors.confirmPassword ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : ''}`}
                   placeholder="Confirm your password"
-                  required
                 />
+                <button
+                  type="button"
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                >
+                  {showConfirmPassword ? (
+                    <EyeOff className="h-5 w-5 text-gray-400 hover:text-gray-600" />
+                  ) : (
+                    <Eye className="h-5 w-5 text-gray-400 hover:text-gray-600" />
+                  )}
+                </button>
               </div>
+              {errors.confirmPassword && <p className="mt-1 text-sm text-red-400">{errors.confirmPassword}</p>}
             </div>
           </div>
         );
@@ -549,82 +564,6 @@ const EnhancedSignup = () => {
       case 3:
         return (
           <div className="space-y-6">
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <div className="flex items-start space-x-3">
-                <FileText className="w-5 h-5 text-blue-600 mt-0.5" />
-                <div>
-                  <h4 className="text-sm font-medium text-blue-800">Identity Verification</h4>
-                  <p className="text-sm text-blue-700 mt-1">
-                    Please select your ID type and upload clear, high-quality images. 
-                    All documents will be securely stored and used for verification purposes only.
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* ID Type Selection */}
-            <div>
-              <label className="form-label">Select Your ID Type *</label>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
-                {[
-                  { value: 'drivers-license', label: 'Driver\'s License', icon: '🚗' },
-                  { value: 'passport', label: 'Passport', icon: '📘' },
-                  { value: 'state-id', label: 'State ID', icon: '🆔' },
-                  { value: 'national-id', label: 'National ID', icon: '🆔' }
-                ].map((option) => (
-                  <label
-                    key={option.value}
-                    className={`relative flex items-center p-4 border-2 rounded-lg cursor-pointer transition-colors ${
-                      formData.idType === option.value
-                        ? 'border-primary-500 bg-primary-50'
-                        : 'border-gray-200 hover:border-gray-300'
-                    }`}
-                  >
-                    <input
-                      type="radio"
-                      name="idType"
-                      value={option.value}
-                      checked={formData.idType === option.value}
-                      onChange={handleInputChange}
-                      className="sr-only"
-                    />
-                    <div className="flex items-center space-x-3">
-                      <span className="text-2xl">{option.icon}</span>
-                      <span className="font-medium text-gray-900">{option.label}</span>
-                    </div>
-                    {formData.idType === option.value && (
-                      <div className="absolute top-2 right-2">
-                        <Check className="w-5 h-5 text-primary-600" />
-                      </div>
-                    )}
-                  </label>
-                ))}
-              </div>
-            </div>
-
-            {/* ID Document Upload */}
-            {useStorageFallback ? (
-              <IDDocumentUploadFallback
-                idType={formData.idType}
-                onUpload={handleDocumentUpload}
-                onRemove={handleDocumentRemove}
-                currentFiles={formData.documents}
-              />
-            ) : (
-              <IDDocumentUpload
-                idType={formData.idType}
-                userId={tempUserId}
-                onUpload={handleDocumentUpload}
-                onRemove={handleDocumentRemove}
-                currentFiles={formData.documents}
-              />
-            )}
-          </div>
-        );
-
-      case 4:
-        return (
-          <div className="space-y-6">
             <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
               <div className="flex items-start space-x-3">
                 <AlertCircle className="w-5 h-5 text-yellow-600 mt-0.5" />
@@ -677,60 +616,83 @@ const EnhancedSignup = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-2xl w-full space-y-8">
+    <div className="min-h-screen bg-black py-12 px-4 sm:px-6 lg:px-8">
+      <div className="absolute inset-0 bg-gradient-to-br from-black via-gray-900 to-black"></div>
+      <div className="relative max-w-4xl mx-auto">
         {/* Header */}
-        <div className="text-center">
-          <h2 className="text-3xl font-bold text-gray-900">Create Your Account</h2>
-          <p className="mt-2 text-gray-600">
-            Complete your registration in a few simple steps
-          </p>
-        </div>
-
-        {/* Progress Steps */}
-        <div className="flex items-center justify-between">
-          {steps.map((step, index) => (
-            <div key={step.id} className="flex items-center">
-              <div className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-medium ${
-                currentStep >= step.id
-                  ? 'bg-primary-600 text-white'
-                  : 'bg-gray-200 text-gray-600'
-              }`}>
-                {currentStep > step.id ? <Check className="w-4 h-4" /> : step.id}
-              </div>
-              <div className="ml-3 hidden sm:block">
-                <p className={`text-sm font-medium ${
-                  currentStep >= step.id ? 'text-primary-600' : 'text-gray-500'
-                }`}>
-                  {step.title}
-                </p>
-                <p className="text-xs text-gray-500">{step.description}</p>
-              </div>
-              {index < steps.length - 1 && (
-                <div className={`hidden sm:block w-16 h-0.5 mx-4 ${
-                  currentStep > step.id ? 'bg-primary-600' : 'bg-gray-200'
-                }`} />
-              )}
-            </div>
-          ))}
-        </div>
-
-        {/* Form Content */}
         <motion.div
-          key={currentStep}
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          exit={{ opacity: 0, x: -20 }}
-          className="bg-white rounded-xl shadow-lg p-8"
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          className="text-center mb-8"
         >
-          <div className="mb-6">
-            <h3 className="text-xl font-semibold text-gray-900">
-              {steps[currentStep - 1].title}
-            </h3>
-            <p className="text-gray-600 mt-1">
-              {steps[currentStep - 1].description}
-            </p>
+          <div className="flex items-center justify-center mb-6">
+            <div className="w-12 h-12 bg-[#d8ed36] rounded-xl flex items-center justify-center">
+              <DollarSign className="w-7 h-7 text-black" />
+            </div>
+            <h1 className="text-3xl font-bold text-white ml-3">InvestFlow</h1>
           </div>
+          <p className="text-lg text-gray-300 max-w-2xl mx-auto">
+          Join thousands of investors building wealth with our smart investment platform          </p>
+        </motion.div>
+
+        {/* Progress Bar */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.6, delay: 0.1 }}
+          className="mb-8"
+        >
+          <div className="flex items-center justify-center space-x-2 mb-4">
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold ${
+              currentStep >= 1 ? 'bg-[#d8ed36] text-black' : 'bg-gray-700 text-gray-400'
+            }`}>
+              1
+            </div>
+            <div className={`h-1 w-16 rounded ${currentStep >= 2 ? 'bg-[#d8ed36]' : 'bg-gray-700'}`} />
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold ${
+              currentStep >= 2 ? 'bg-[#d8ed36] text-black' : 'bg-gray-700 text-gray-400'
+            }`}>
+              2
+            </div>
+            <div className={`h-1 w-16 rounded ${currentStep >= 3 ? 'bg-[#d8ed36]' : 'bg-gray-700'}`} />
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold ${
+              currentStep >= 3 ? 'bg-[#d8ed36] text-black' : 'bg-gray-700 text-gray-400'
+            }`}>
+              3
+            </div>
+            <div className={`h-1 w-16 rounded ${currentStep >= 4 ? 'bg-[#d8ed36]' : 'bg-gray-700'}`} />
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold ${
+              currentStep >= 4 ? 'bg-[#d8ed36] text-black' : 'bg-gray-700 text-gray-400'
+            }`}>
+              4
+            </div>
+          </div>
+          <div className="flex justify-center space-x-8 text-xs text-gray-300">
+            <span>Basic Info</span>
+            <span>Personal Info</span>
+            <span>Documents</span>
+            <span>Security</span>
+          </div>
+        </motion.div>
+
+        {/* Form */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.2 }}
+          className="max-w-2xl mx-auto"
+        >
+          <div className="bg-gray-900 rounded-2xl shadow-2xl border border-gray-800">
+            <div className="p-8">
+              <div className="mb-6">
+                <h2 className="text-2xl font-bold text-white text-center mb-2">
+                  {steps[currentStep - 1].title}
+                </h2>
+                <p className="text-gray-300 text-center">
+                  {steps[currentStep - 1].description}
+                </p>
+              </div>
 
           {renderStepContent()}
 
@@ -739,11 +701,11 @@ const EnhancedSignup = () => {
             <motion.div
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="mt-6 bg-red-50 border border-red-200 rounded-lg p-4"
+              className="mt-6 bg-red-900/20 border border-red-500/30 rounded-lg p-4"
             >
               <div className="flex items-center space-x-2">
-                <AlertCircle className="w-4 h-4 text-red-600" />
-                <p className="text-sm text-red-600">{error}</p>
+                <AlertCircle className="w-4 h-4 text-red-400" />
+                <p className="text-sm text-red-400">{error}</p>
               </div>
             </motion.div>
           )}
@@ -751,54 +713,65 @@ const EnhancedSignup = () => {
           {/* Navigation Buttons */}
           <div className="flex items-center justify-between mt-8">
             <button
+              type="button"
               onClick={handlePrevious}
               disabled={currentStep === 1 || isLoading}
-              className="btn-secondary disabled:opacity-50"
+              className="px-6 py-3 text-gray-300 hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <ArrowLeft className="w-4 h-4 mr-2" />
+              <ArrowLeft className="w-4 h-4 mr-2 inline" />
               Previous
             </button>
 
             {currentStep < 4 ? (
               <button
+                type="button"
                 onClick={handleNext}
                 disabled={isLoading}
-                className="btn-primary disabled:opacity-50"
+                className="btn-primary px-6 py-3 disabled:opacity-50"
               >
                 Next
-                <ArrowRight className="w-4 h-4 ml-2" />
+                <ArrowRight className="w-4 h-4 ml-2 inline" />
               </button>
             ) : (
               <button
+                type="button"
                 onClick={handleSubmit}
                 disabled={isLoading || !formData.secretPhrase}
-                className="btn-primary disabled:opacity-50"
+                className="btn-primary w-full py-3 text-lg font-semibold disabled:opacity-50"
               >
                 {isLoading ? (
                   <LoadingSpinner size="sm" />
                 ) : (
                   <>
                     Create Account
-                    <Check className="w-4 h-4 ml-2" />
+                    <Check className="w-4 h-4 ml-2 inline" />
                   </>
                 )}
               </button>
             )}
           </div>
+            </div>
+          </div>
         </motion.div>
 
         {/* Login Link */}
-        <div className="text-center">
-          <p className="text-gray-600">
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.6, delay: 0.4 }}
+          className="text-center mt-8"
+        >
+          <p className="text-gray-300">
             Already have an account?{' '}
             <button
+              type="button"
               onClick={() => navigate('/login')}
-              className="text-primary-600 hover:text-primary-700 font-medium"
+              className="text-[#d8ed36] hover:text-[#c4d630] font-medium transition-colors"
             >
               Sign in here
             </button>
           </p>
-        </div>
+        </motion.div>
       </div>
 
       {/* Secret Phrase Modal */}
