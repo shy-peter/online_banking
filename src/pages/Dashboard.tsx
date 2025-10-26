@@ -15,6 +15,7 @@ import {
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area, PieChart, Pie, Cell, Legend } from 'recharts';
 import { useAuth } from '../contexts/AuthContext';
 import { formatCurrency, calculateMonthlyInterest, getInvestmentPlan } from '../lib/appwrite';
+import UserReferralPanel from '../components/UserReferralPanel';
 import InvestmentModal from '../components/InvestmentModal';
 import WithdrawalModal from '../components/WithdrawalModal';
 import TransferModal from '../components/TransferModal';
@@ -341,6 +342,8 @@ const Dashboard = () => {
           transition={{ duration: 0.6, delay: 0.3 }}
           className="card"
         >
+
+        {/* Referral Panel removed — moved to Settings > Referrals */}
           <div className="card-header">
             <h3 className="text-lg font-semibold text-gray-900">Portfolio Breakdown</h3>
             <p className="text-sm text-gray-600 mt-1">Distribution of your portfolio</p>

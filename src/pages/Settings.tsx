@@ -27,13 +27,15 @@ import {
   Key,
   CreditCard,
   Plus,
-  Edit
+  Edit,
+  Users
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { formatCurrency } from '../lib/appwrite';
 import LoadingSpinner from '../components/LoadingSpinner';
 import PasswordChangeModal from '../components/PasswordChangeModal';
 import LoginHistoryModal from '../components/LoginHistoryModal';
+import UserReferralPanel from '../components/UserReferralPanel';
 
 const Settings = () => {
   const { user, userProfile, investments, paymentMethods, updateUserProfile, changePassword, getLoginHistory, terminateSession, terminateAllOtherSessions, addPaymentMethod, deletePaymentMethod, setDefaultPaymentMethod, getPaymentMethodTypes } = useAuth();
@@ -296,6 +298,7 @@ const Settings = () => {
     { id: 'notifications', name: 'Notifications', icon: Bell },
     { id: 'security', name: 'Security', icon: Shield },
     { id: 'payment', name: 'Payment Methods', icon: CreditCard },
+    { id: 'referrals', name: 'Referrals', icon: Users },
     { id: 'preferences', name: 'Preferences', icon: Globe }
   ];
 
@@ -1406,6 +1409,10 @@ const Settings = () => {
                   </div>
                 </div>
               )}
+
+              {/* Preferences */}
+              {/* Referrals */}
+              {activeTab === 'referrals' && <UserReferralPanel />}
 
               {/* Preferences */}
               {activeTab === 'preferences' && (

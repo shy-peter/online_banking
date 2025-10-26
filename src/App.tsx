@@ -2,8 +2,10 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { useAuth } from './contexts/AuthContext';
+import { ChatProvider } from './contexts/ChatContext';
 import Layout from './components/Layout';
 import Landing from './pages/Landing';
+import ChatWidget from './components/ChatWidget';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import EnhancedSignup from './pages/EnhancedSignup';
@@ -16,6 +18,7 @@ import AdminDashboard from './pages/AdminDashboard';
 import AdminTransactions from './pages/AdminTransactions';
 import AdminPaymentMethods from './pages/AdminPaymentMethods';
 import AdminPaymentMethodTypes from './pages/AdminPaymentMethodTypes';
+import AdminReferrals from './pages/AdminReferrals';
 import SecurityCenter from './pages/SecurityCenter';
 import VerifyEmail from './pages/VerifyEmail';
 import ResetPassword from './pages/ResetPassword';
@@ -34,8 +37,10 @@ const App: React.FC = () => {
 
   return (
     <Router>
-      <div className="App px-2 md:px-4">
-        <Toaster
+      <ChatProvider>
+        <div className="App px-2 md:px-4">
+          <ChatWidget />
+          <Toaster
           position="top-right"
           toastOptions={{
             duration: 4000,
@@ -66,7 +71,7 @@ const App: React.FC = () => {
             <>
               <Route path="/" element={<Landing />} />
               <Route path="/login" element={<Login />} />
-              <Route path="/register" element={<Register />} />
+              <Route path="/register" element={<EnhancedSignup />} />
               <Route path="/signup" element={<EnhancedSignup />} />
               <Route path="/security" element={<SecurityCenter />} />
               <Route path="/verify-email" element={<VerifyEmail />} />
@@ -86,11 +91,13 @@ const App: React.FC = () => {
               <Route path="admin/transactions" element={<AdminTransactions />} />
               <Route path="admin/payment-methods" element={<AdminPaymentMethods />} />
               <Route path="admin/payment-method-types" element={<AdminPaymentMethodTypes />} />
+              <Route path="admin/referrals" element={<AdminReferrals />} />
               <Route path="*" element={<Navigate to="/dashboard" replace />} />
             </Route>
           )}
         </Routes>
       </div>
+    </ChatProvider>
     </Router>
   );
 }

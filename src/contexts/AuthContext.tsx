@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { account, databases, storage, DATABASE_ID, COLLECTIONS, generateAccountNumber, getInvestmentPlan, formatCurrency } from '../lib/appwrite';
+import { referralService } from '../lib/referralService';
 import { ID, Query } from 'appwrite';
 import toast from 'react-hot-toast';
 import type { User, UserProfile, Investment, Transaction, AuthContextType, LoginSession, PaymentMethod, BonusCode, Transfer } from '../types/appwrite';
@@ -408,10 +409,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         ]
       );
       
+      // Generate referral code for the new user
+      try {
+        await referralService.createReferralCode(newUser.$id);
+      } catch (referralError) {
+        console.error('Failed to generate initial referral code:', referralError);
+        // Don't fail registration if referral code generation fails
+      }
+
       console.log('User profile created successfully (register):', userProfile);
       
       toast.success('Account created! Please check your email to verify your account.');
-      return { success: true };
+      return { success: true, user: newUser };
     } catch (error) {
       const errorMessage = error.message || 'Registration failed';
       toast.error(errorMessage);
@@ -513,6 +522,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       );
       
       console.log('User profile created successfully:', userProfile);
+      
+      // Generate initial referral code
+      await userService.afterUserCreated(newUser.$id);
       
       // Clean up the temporary session - user should verify email before logging in
       try {
@@ -2163,6 +2175,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
+  // Referral functions
+  const getReferralStats = async () => {
+    if (!user) return { total: 0, completed: 0 };
+    return await referralService.getUserReferralStats(user.$id);
+  };
+
+  const createReferralCode = async () => {
+    if (!user) throw new Error('User not logged in');
+    return await referralService.createReferralCode(user.$id);
+  };
+
   const value: AuthContextType = {
     user,
     userProfile,
@@ -2209,6 +2232,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     // Password recovery functions
     sendPasswordRecoveryEmail,
     resetPassword,
+    // Referral functions
+    getReferralStats,
+    createReferralCode,
     databases,
     storage,
     DATABASE_ID,

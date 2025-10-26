@@ -18,6 +18,7 @@ export { ID };
 // Database configuration (env overrides with sensible defaults that match setup-database.sh)
 export const DATABASE_ID = import.meta.env.VITE_APPWRITE_DATABASE_ID || 'investflow-db';
 export const COLLECTIONS = {
+  MESSAGES: import.meta.env.VITE_APPWRITE_MESSAGES_COLLECTION_ID || 'messages',
   USERS: import.meta.env.VITE_APPWRITE_USERS_COLLECTION_ID || 'users',
   INVESTMENTS: import.meta.env.VITE_APPWRITE_INVESTMENTS_COLLECTION_ID || 'investments',
   TRANSACTIONS: import.meta.env.VITE_APPWRITE_TRANSACTIONS_COLLECTION_ID || 'transactions',
@@ -26,6 +27,7 @@ export const COLLECTIONS = {
   PAYMENT_METHODS: import.meta.env.VITE_APPWRITE_PAYMENT_METHODS_COLLECTION_ID || 'payment-methods',
   BONUS_CODES: import.meta.env.VITE_APPWRITE_BONUS_CODES_COLLECTION_ID || 'bonus-codes',
   TRANSFERS: import.meta.env.VITE_APPWRITE_TRANSFERS_COLLECTION_ID || 'transfers'
+  ,REFERRALS: import.meta.env.VITE_APPWRITE_REFERRALS_COLLECTION_ID || 'referrals'
 };
 
 // Investment plans configuration

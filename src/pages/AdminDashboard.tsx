@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import ClickToCopy from '../components/ClickToCopy';
 import {
@@ -33,6 +33,7 @@ import {
 import { ID, Query } from 'appwrite';
 import UserDetailsModal from '../components/UserDetailsModal';
 import type { BonusCode } from '../types/appwrite';
+import { chatService } from '../lib/chatService';
 
 const AdminDashboard = () => {
   const { userProfile, investments, transactions, paymentMethods, updatePaymentMethod, simulateTransactionStatusChange, updateUser, approveInvestment, fixInvestmentOwnership } = useAuth();
@@ -57,6 +58,11 @@ const AdminDashboard = () => {
   // Support messages state
   const [pendingSupportMessages, setPendingSupportMessages] = useState<any[]>([]);
   const [supportLoading, setSupportLoading] = useState(false);
+  // Admin support chat state
+  const [selectedSupportSession, setSelectedSupportSession] = useState<string | null>(null);
+  const [supportMessages, setSupportMessages] = useState<any[]>([]);
+  const [supportReply, setSupportReply] = useState('');
+  const supportSubRef = useRef<any>(null);
   
   // User search state
   const [searchQuery, setSearchQuery] = useState('');
@@ -162,33 +168,107 @@ const AdminDashboard = () => {
   const fetchPendingSupportMessages = async () => {
     setSupportLoading(true);
     try {
-      // For now, we'll create mock support messages since we don't have a support collection yet
-      // In a real implementation, you would fetch from a support messages collection
-      const mockMessages = [
-        {
-          $id: '1',
-          userId: 'user1',
-          subject: 'Withdrawal Issue',
-          message: 'I am unable to withdraw my funds. Please help.',
-          status: 'pending',
-          $createdAt: new Date().toISOString(),
-          priority: 'high'
-        },
-        {
-          $id: '2',
-          userId: 'user2',
-          subject: 'Account Verification',
-          message: 'My account verification is taking too long.',
-          status: 'pending',
-          $createdAt: new Date(Date.now() - 86400000).toISOString(),
-          priority: 'medium'
+      // Fetch active chat sessions and the latest user message per session
+      const { Query } = await import('appwrite');
+
+      // Get active sessions (most recent first)
+      const sessionsResp = await databases.listDocuments(
+        DATABASE_ID,
+        'chat_sessions',
+        [Query.equal('status', 'active'), Query.orderDesc('lastActivityAt'), Query.limit(100)]
+      );
+
+      const sessions = sessionsResp.documents || [];
+
+      const results: any[] = [];
+
+      // For each session, fetch the latest message
+      for (const s of sessions) {
+        try {
+          const msgsResp = await databases.listDocuments(
+            DATABASE_ID,
+            'chat_messages',
+            [Query.equal('sessionId', s.$id), Query.orderDesc('timestamp'), Query.limit(1)]
+          );
+          const lastMsg = msgsResp.documents && msgsResp.documents[0];
+
+          results.push({
+            $id: s.$id,
+            userId: s.userId || 'guest',
+            subject: lastMsg ? (lastMsg.message?.slice(0, 80) || 'Message') : 'No messages yet',
+            message: lastMsg?.message || '',
+            status: s.status || 'active',
+            $createdAt: lastMsg?.timestamp || s.startedAt || s.$createdAt,
+            priority: 'normal'
+          });
+        } catch (err) {
+          console.error('Error fetching messages for session', s.$id, err);
         }
-      ];
-      setPendingSupportMessages(mockMessages);
+      }
+
+      setPendingSupportMessages(results);
     } catch (error) {
       console.error('Error fetching pending support messages:', error);
     } finally {
       setSupportLoading(false);
+    }
+  };
+
+  // Open a support session for admin to view and reply
+  const openSupportSession = async (sessionId: string) => {
+    setSelectedSupportSession(sessionId);
+    setSupportMessages([]);
+    try {
+      const msgs = await chatService.getSessionMessages(sessionId);
+      setSupportMessages(msgs as any[]);
+
+      // unsubscribe previous
+      try {
+        if (supportSubRef && (supportSubRef as any).current) {
+          const prev = (supportSubRef as any).current;
+          if (typeof prev === 'function') prev();
+          else prev.unsubscribe?.();
+        }
+      } catch (e) {
+        // ignore
+      }
+
+      // subscribe to new messages for this session
+      const sub = await chatService.subscribeToMessages(sessionId, (msg) => {
+        setSupportMessages(prev => [...prev, msg]);
+      });
+      (supportSubRef as any).current = sub;
+    } catch (error) {
+      console.error('Error opening support session:', error);
+    }
+  };
+
+  const closeSupportSession = async () => {
+    try {
+      if (supportSubRef && (supportSubRef as any).current) {
+        const sub = (supportSubRef as any).current;
+        if (typeof sub === 'function') sub();
+        else sub.unsubscribe?.();
+      }
+    } catch (e) {
+      // ignore
+    }
+    setSelectedSupportSession(null);
+    setSupportMessages([]);
+    setSupportReply('');
+  };
+
+  const sendSupportReply = async () => {
+    if (!selectedSupportSession || !supportReply.trim()) return;
+    try {
+      setIsProcessing(true);
+      await chatService.sendMessage(selectedSupportSession, supportReply.trim(), 'admin', userProfile?.email || 'admin');
+      setSupportReply('');
+    } catch (err) {
+      console.error('Error sending admin reply:', err);
+      alert('Failed to send reply');
+    } finally {
+      setIsProcessing(false);
     }
   };
 
@@ -1336,6 +1416,62 @@ const AdminDashboard = () => {
                 <RefreshCw className="w-8 h-8 text-gray-400 mx-auto mb-4 animate-spin" />
                 <p className="text-gray-600">Loading support messages...</p>
               </div>
+            ) : selectedSupportSession ? (
+              <div className="flex flex-col h-[60vh]">
+                <div className="px-4 py-3 border-b flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <button onClick={closeSupportSession} className="text-sm text-primary-600 mr-2">← Back</button>
+                    <div className="font-semibold">Support — Session {selectedSupportSession.slice(0,8)}</div>
+                  </div>
+                  <div>
+                    <button
+                      onClick={async () => {
+                        try {
+                          await chatService.closeSession(selectedSupportSession);
+                          await fetchPendingSupportMessages();
+                          closeSupportSession();
+                        } catch (err) {
+                          console.error('Error closing session:', err);
+                        }
+                      }}
+                      className="text-sm bg-red-100 text-red-700 px-3 py-1 rounded"
+                    >
+                      Close Session
+                    </button>
+                  </div>
+                </div>
+
+                <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
+                  {supportMessages.length === 0 ? (
+                    <div className="text-center text-sm text-gray-500">No messages yet</div>
+                  ) : (
+                    supportMessages.map((msg: any, idx: number) => {
+                      const isAdminMsg = msg.type === 'admin';
+                      const time = msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+                      return (
+                        <div key={msg.$id || idx} className={`flex ${isAdminMsg ? 'justify-end' : 'justify-start'}`}>
+                          <div className={`max-w-[80%] px-3 py-2 rounded-lg text-sm ${isAdminMsg ? 'bg-primary-600 text-white' : 'bg-white text-gray-800 shadow'}`}>
+                            <div className="break-words">{msg.message}</div>
+                            <div className={`text-[11px] mt-1 ${isAdminMsg ? 'text-white/80' : 'text-gray-400'}`}>{time}</div>
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+
+                <div className="border-t p-3 bg-white">
+                  <div className="flex space-x-2">
+                    <input
+                      value={supportReply}
+                      onChange={(e) => setSupportReply(e.target.value)}
+                      placeholder="Type a reply..."
+                      className="flex-1 rounded-full border border-gray-200 px-4 py-2 text-sm focus:outline-none"
+                    />
+                    <button onClick={sendSupportReply} className="bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded-full text-sm">Send</button>
+                  </div>
+                </div>
+              </div>
             ) : pendingSupportMessages.length > 0 ? (
               <div className="divide-y divide-gray-200">
                 {pendingSupportMessages.map((message, index) => (
@@ -1344,7 +1480,8 @@ const AdminDashboard = () => {
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.3, delay: index * 0.05 }}
-                    className="p-6 hover:bg-gray-50 transition-colors duration-200"
+                    className="p-6 hover:bg-gray-50 transition-colors duration-200 cursor-pointer"
+                    onClick={() => openSupportSession(message.$id)}
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-4">
@@ -1384,14 +1521,14 @@ const AdminDashboard = () => {
                         
                         <div className="flex space-x-2">
                           <button
-                            onClick={() => handleViewUserDetails(allUsers.find(u => u.userId === message.userId))}
+                            onClick={(e) => { e.stopPropagation(); handleViewUserDetails(allUsers.find(u => u.userId === message.userId)); }}
                             className="text-xs bg-blue-100 text-blue-700 px-3 py-1 rounded hover:bg-blue-200 transition-colors flex items-center space-x-1"
                           >
                             <Eye className="w-3 h-3" />
                             <span>View User</span>
                           </button>
                           <button
-                            onClick={() => handleResolveSupportMessage(message.$id)}
+                            onClick={(e) => { e.stopPropagation(); handleResolveSupportMessage(message.$id); }}
                             className="text-xs bg-green-100 text-green-700 px-3 py-1 rounded hover:bg-green-200 transition-colors"
                           >
                             Resolve
@@ -1798,7 +1935,7 @@ const AdminDashboard = () => {
                     onChange={(e) => setAdjustmentReason(e.target.value)}
                     className="form-input"
                     rows={3}
-                    placeholder={adjustmentType === 'increase' ? "e.g., System bonus, promotional reward, referral bonus" : "e.g., Account adjustment, correction"}
+                    placeholder={adjustmentType === 'increase' ? "e.g., System bonus, promotional reward" : "e.g., Account adjustment, correction"}
                   />
                 </div>
               </div>

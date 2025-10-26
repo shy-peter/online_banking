@@ -516,7 +516,7 @@ const Profile = () => {
                     <Mail className="w-4 h-4 text-gray-400 mr-3" />
                     <span>{user?.email || 'Not provided'}</span>
                   </ClickToCopy>
-                  <p className="text-xs text-gray-500 mt-1 ">Email cannot be changed</p>
+                  <p className="text-xs text-red-500 mt-1 ">Email cannot be changed</p>
                 </div>
 
                 <div>

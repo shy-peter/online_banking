@@ -84,7 +84,7 @@ export interface Transaction {
   $createdAt: string;
   $updatedAt: string;
   userId: string;
-  type: 'investment' | 'withdrawal' | 'interest_payment' | 'account_created' | 'earning';
+  type: 'investment' | 'withdrawal' | 'interest_payment' | 'account_created' | 'earning' | 'transfer_in' | 'transfer_out';
   amount: number;
   description: string;
   status: 'pending' | 'completed' | 'failed' | 'cancelled';
@@ -189,7 +189,7 @@ export interface AuthContextType {
   transactions: Transaction[];
   paymentMethods: PaymentMethod[];
   login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
-  register: (email: string, password: string, name: string) => Promise<{ success: boolean; error?: string }>;
+  register: (email: string, password: string, name: string) => Promise<{ success: boolean; error?: string; user?: User }>;
   signup: (
     email: string, 
     password: string, 
@@ -303,6 +303,10 @@ export interface AuthContextType {
   // Password recovery functions
   sendPasswordRecoveryEmail: (email: string) => Promise<{ success: boolean; error?: string }>;
   resetPassword: (userId: string, secret: string, newPassword: string) => Promise<{ success: boolean; error?: string }>;
+  
+  // Referral functions
+  getReferralStats: () => Promise<{ total: number; completed: number }>;
+  createReferralCode: () => Promise<string>;
   
   // Admin functions
   databases: any;

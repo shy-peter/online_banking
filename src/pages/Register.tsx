@@ -1,16 +1,19 @@
-import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Eye, EyeOff, Mail, Lock, User, DollarSign, Check, ArrowRight, Calendar, Shield, Phone, MapPin, Hash } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { INVESTMENT_PLANS, formatCurrency } from '../lib/appwrite';
+import { referralService } from '../lib/referralService';
 import LoadingSpinner from '../components/LoadingSpinner';
 import ConsentModal from '../components/ConsentModal';
 
 const Register = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [step, setStep] = useState(1);
   const [showConsentModal, setShowConsentModal] = useState(true);
+  const [referralError, setReferralError] = useState('');
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -194,6 +197,16 @@ const Register = () => {
       );
 
       if (result.success) {
+        // Check for referral code in URL parameters
+        const referralCode = searchParams.get('ref');
+        if (referralCode && result.user) {
+          try {
+            await referralService.completeReferral(referralCode, result.user.$id);
+          } catch (referralError) {
+            console.error('Failed to complete referral:', referralError);
+            setReferralError(referralError instanceof Error ? referralError.message : 'Failed to complete referral');
+          }
+        }
         navigate('/verify-email');
       }
     } catch (error) {
