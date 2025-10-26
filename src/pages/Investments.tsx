@@ -121,7 +121,7 @@ const Investments: React.FC = () => {
   }, 0);
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="space-y-6  p-3 md:px-6 md:py-5">
       {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: -20 }}
@@ -138,21 +138,21 @@ const Investments: React.FC = () => {
             onClick={() => navigate('/dashboard')}
             className="flex md:hidden items-center px-4 py-2 text-sm font-medium text-white bg-gray-800 border border-gray-700 rounded-lg hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#d8ed36] transition-colors duration-200"
           >
-            <ArrowLeft className="w-4 h-4 mr-2 " />
-            Back to Dashboard
+            <ArrowLeft className="w-4 h-4 mr-2  " />
+            <span className='hidden md:block'>Back to Dashboard</span>
           </button>
         </div>
         <div className="flex flex-col sm:flex-row gap-3 mt-4 lg:mt-0">
           <button
             onClick={() => setShowWithdrawalModal(true)}
-            className="btn-secondary px-6 py-3"
+            className="btn-secondary hidden px-6 py-3"
           >
             <ArrowDownRight className="w-4 h-4 mr-2" />
             Withdraw Funds
           </button>
           <button
             onClick={() => setShowTransferModal(true)}
-            className="btn-secondary px-6 py-3"
+            className="btn-secondary hidden px-6 py-3"
           >
             <Send className="w-4 h-4 mr-2" />
             Transfer Funds

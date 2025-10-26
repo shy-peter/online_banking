@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
-import { Copy, Check } from 'lucide-react';
-import toast from 'react-hot-toast';
+import React, { useState } from "react";
+import { Copy, Check } from "lucide-react";
+import toast from "react-hot-toast";
 
 interface ClickToCopyProps {
   text: string;
@@ -13,32 +13,32 @@ interface ClickToCopyProps {
 const ClickToCopy: React.FC<ClickToCopyProps> = ({
   text,
   children,
-  className = '',
+  className = "",
   showIcon = true,
-  copyMessage = 'Copied to clipboard!'
+  copyMessage = "Copied to clipboard!",
 }) => {
   const [copied, setCopied] = useState(false);
 
   const handleCopy = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    
+
     try {
       await navigator.clipboard.writeText(text);
       setCopied(true);
       toast.success(copyMessage);
-      
+
       // Reset the copied state after 2 seconds
       setTimeout(() => setCopied(false), 2000);
     } catch (error) {
-      console.error('Failed to copy text:', error);
-      toast.error('Failed to copy to clipboard');
+      console.error("Failed to copy text:", error);
+      toast.error("Failed to copy to clipboard");
     }
   };
 
   return (
-    <div 
-      className={`inline-flex items-center space-x-2 cursor-pointer hover:bg-gray-100 rounded px-2 py-1 transition-colors group ${className}`}
+    <div
+      className={`inline-flex items-center space-x-2 cursor-pointer hover:bg-green-300 rounded px-2 py-1 transition-colors group ${className}`}
       onClick={handleCopy}
       title="Click to copy"
     >
@@ -48,7 +48,7 @@ const ClickToCopy: React.FC<ClickToCopyProps> = ({
           {copied ? (
             <Check className="w-4 h-4 text-green-600" />
           ) : (
-            <Copy className="w-4 h-4 text-gray-400 group-hover:text-gray-600" />
+            <Copy className="w-4 h-4 text-green-600 group-hover:text-black" />
           )}
         </div>
       )}

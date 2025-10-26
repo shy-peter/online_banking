@@ -23,22 +23,23 @@ const Header = () => {
       initial={{ opacity: 0, y: -20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6 }}
-      className="bg-black border-b border-gray-800 px-6 py-4"
+      className="bg-black border-b border-gray-800 px-3 md:px-6 py-2 md:py-4"
     >
       <div className="flex items-center justify-between">
         {/* Welcome message */}
-        <div>
-          <h1 className="text-xl font-semibold text-white">
+        {/* <div>
+          <h1 className="text-sm md:text-xl font-semibold text-white">
             Welcome back{userProfile?.name ? `, ${userProfile.name.split(' ')[0]}` : ''}!
           </h1>
           <p className="text-sm text-gray-300 mt-1">
             {totalPortfolioValue > 0 ? (
-              <>Your portfolio is valued at {formatCurrency(totalPortfolioValue)}</>
+              <>Your Networth {formatCurrency(totalPortfolioValue)}</>
             ) : (
               <>Ready to start your investment journey?</>
             )}
           </p>
-        </div>
+        </div> */}
+        <div className=' hidde'>InvestFlowBank</div>
 
         {/* Header actions */}
         <div className="flex items-center space-x-4">

@@ -167,9 +167,11 @@ const Landing: React.FC = () => {
                 >
                   Get Started
                 </button>
-                <button className="border-2 border-white text-white px-8 py-4 rounded-full font-semibold hover:bg-white hover:text-black transition-all duration-200 text-lg">
-                  Download App
-                </button>
+                <Link to="/login" className="border-2 border-white text-center text-white px-8 py-4 rounded-full font-semibold hover:bg-white hover:text-black transition-all duration-200 text-lg">
+                  Login
+                </Link>
+                              {/* <Link to="/login" className="text-gray-300 hover:text-white font-medium transition-colors">Login</Link> */}
+
               </div>
             </div>
             

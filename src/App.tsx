@@ -38,7 +38,7 @@ const App: React.FC = () => {
   return (
     <Router>
       <ChatProvider>
-        <div className="App px-2 md:px-4">
+        <div className="App  md:px-4">
           <ChatWidget />
           <Toaster
           position="top-right"
