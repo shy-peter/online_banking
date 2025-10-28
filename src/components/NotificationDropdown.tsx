@@ -50,7 +50,7 @@ const NotificationDropdown: React.FC = () => {
     type: Notification["type"],
     priority: Notification["priority"]
   ) => {
-    const iconClass = `w-5 h-5 ${
+    const iconClass = `w-3 h-3 ${
       priority === "high"
         ? "text-red-400"
         : priority === "medium"
@@ -114,11 +114,11 @@ const NotificationDropdown: React.FC = () => {
   };
 
   return (
-    <div className="relative" ref={dropdownRef}>
+    <div className="relative " ref={dropdownRef}>
       {/* Notification Bell Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="relative p-2 text-gray-400 hover:text-[#d8ed36] hover:bg-gray-800 rounded-lg transition-colors"
+        className="relative  p-2 text-gray-400 hover:text-[#d8ed36] hover:bg-gray-800 rounded-lg transition-colors"
       >
         <Bell className="h-5 w-5" />
         {unreadCount > 0 && (
@@ -140,27 +140,27 @@ const NotificationDropdown: React.FC = () => {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -10, scale: 0.95 }}
             transition={{ duration: 0.2 }}
-            className="absolute -right-20 md:right-0 mt-2  w-[300px] md:w-96 bg-gray-900 rounded-lg shadow-lg border border-gray-800 z-50 max-h-96 overflow-hidden"
+            className="absolute  -right-20 md:right-0 mt-2  w-[300px] md:w-96 bg-gray-400 rounded-lg shadow-lg border border-gray-800 z-50 max-h-96 overflow-hidden"
           >
             {/* Header */}
             <div className="flex items-center justify-between p-4 border-b border-gray-800">
-              <h3 className=" md:text-lg font-semibold text-white">
+              <h3 className="text-sm md:text-lg font-semibold text-white">
                 Notifications
               </h3>
               <div className="flex items-center space-x-2">
-                {unreadCount > 0 && (
+                {/* {unreadCount > 0 && (
                   <button
                     onClick={markAllAsRead}
-                    className="text-sm text-[#d8ed36] hover:text-[#c4d630] font-medium flex items-center"
+                    className=" text-xs md:text-sm text-[#d8ed36] hover:text-[#c4d630] font-medium flex items-center"
                   >
                     <CheckCheck className="w-4 h-4 mr-1" />
                     Mark all read
                   </button>
-                )}
+                )} */}
                 {notifications.length > 0 && (
                   <button
                     onClick={clearAllNotifications}
-                    className="text-sm text-red-400 hover:text-red-300 font-medium flex items-center"
+                    className="text-xs md:text-sm text-red-600 hover:text-red-300 font-medium flex items-center"
                   >
                     <Trash2 className="w-4 h-4 mr-1" />
                     Clear all
@@ -168,7 +168,7 @@ const NotificationDropdown: React.FC = () => {
                 )}
                 <button
                   onClick={() => setIsOpen(false)}
-                  className="text-gray-400 hover:text-[#d8ed36]"
+                  className="text-white hover:text-[#d8ed36]"
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -184,58 +184,67 @@ const NotificationDropdown: React.FC = () => {
                       key={notification.$id}
                       initial={{ opacity: 0, x: -20 }}
                       animate={{ opacity: 1, x: 0 }}
-                      className={`p-4 cursor-pointer transition-colors border-l-4 ${getPriorityColor(
+                      className={`p-1 md:p-2 border   cursor-pointer transition-colors border-l ${getPriorityColor(
                         notification.priority
                       )} ${
                         notification.isRead !== "true" &&
                         notification.isRead !== true
-                          ? "bg-gray-800 hover:bg-gray-700"
-                          : "bg-gray-900 hover:bg-gray-800"
+                          ? "bg-gray-800  hover:bg-gray-600"
+                          : "bg-gray-400  hover:bg-gray-700"
                       }`}
                       onClick={() => handleNotificationClick(notification)}
                     >
                       <div className="flex items-start space-x-3">
-                        <div className="flex-shrink-0 mt-0.5">
+                        <div className="flex-shrink-0 mt-0.5 hidden  ">
                           {getNotificationIcon(
                             notification.type,
                             notification.priority
                           )}
                         </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center justify-between">
+                        <div className="flex-1   min-w-0">
+                          <div className="flex items-center   justify-between">
                             <p
-                              className={`text-sm font-medium ${
+                              className={`text-xs md:text-sm font-medium ${
                                 notification.isRead !== "true" &&
                                 notification.isRead !== true
-                                  ? "text-white"
-                                  : "text-gray-300"
+                                  ? "text-white italic"
+                                  : "text-white italic"
                               }`}
                             >
-                              {notification.title}
+                              {notification.title} ...
                             </p>
-                            <div className="flex items-center space-x-2">
-                              <span className="text-xs text-gray-400">
+                            <div className="flex items-center  space-x-2">
+                              <span className="text-xs text-white">
                                 {formatTimeAgo(notification.$createdAt)}
                               </span>
                               {notification.isRead !== "true" &&
-                                notification.isRead !== true && (
-                                  <div className="w-2 h-2 bg-[#d8ed36] rounded-full"></div>
-                                )}
+                              notification.isRead !== true ? (
+                                <div className="w-2 h-2 bg-[#cee331] rounded-full"></div>
+                              ) : (
+                                <div className="w-2 h-2 bg-[#a9c0bd]  rounded-full"></div>
+                              )}
                             </div>
                           </div>
                           <p
-                            className={`text-sm mt-1 ${
+                            className={`text-xs md:text-sm mt-1 ${
                               notification.isRead !== "true" &&
                               notification.isRead !== true
                                 ? "text-gray-200"
-                                : "text-gray-400"
+                                : "text-white"
                             }`}
                           >
                             {notification.message}
                           </p>
                           {notification.actionUrl && (
-                            <p className="text-xs text-[#d8ed36] mt-1">
-                              Click to view details
+                            <p
+                              className={`text-xs  mt-1 italic ${
+                                notification.isRead !== "true" &&
+                                notification.isRead !== true
+                                  ? "text-[#d8ed36]"
+                                  : "text-white "
+                              } `}
+                            >
+                              view more..
                             </p>
                           )}
                         </div>
@@ -268,8 +277,8 @@ const NotificationDropdown: React.FC = () => {
 
             {/* Footer */}
             {notifications.length > 0 && (
-              <div className="p-4 border-t border-gray-800 bg-gray-800">
-                <p className="text-xs text-gray-400 text-center">
+              <div className="p-4 border-t border-gray-800 bg-gray-400">
+                <p className="text-xs text-white text-center">
                   {unreadCount} unread notification
                   {unreadCount !== 1 ? "s" : ""}
                 </p>

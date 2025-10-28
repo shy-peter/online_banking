@@ -562,7 +562,7 @@ const InvestmentModal: React.FC<InvestmentModalProps> = ({ isOpen, onClose }) =>
             <button
               type="submit"
               disabled={isLoading || !selectedPlan || !formData.paymentMethod}
-              className="btn-primary flex-1 py-3 text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+              className="btn-primary  flex-1 py-3 text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isLoading ? (
                 <div className="flex items-center justify-center">

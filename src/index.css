@@ -65,7 +65,7 @@
   }
 
   .btn-primary {
-    @apply btn bg-[#d8ed36] text-black hover:bg-[#c4d630] focus:ring-[#d8ed36] shadow-soft;
+    @apply btn bg-[#cee331] text-black hover:bg-[#c4d630] focus:ring-[#d8ed36] shadow-soft;
   }
 
   .btn-secondary {

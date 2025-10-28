@@ -1,10 +1,10 @@
-import React from 'react';
-import { motion } from 'framer-motion';
-import { useNavigate } from 'react-router-dom';
-import { Search, Settings } from 'lucide-react';
-import { useAuth } from '../contexts/AuthContext';
-import { formatCurrency } from '../lib/appwrite';
-import NotificationDropdown from './NotificationDropdown';
+import React from "react";
+import { motion } from "framer-motion";
+import { useNavigate, Link } from "react-router-dom";
+import { Search, Settings } from "lucide-react";
+import { useAuth } from "../contexts/AuthContext";
+import { formatCurrency } from "../lib/appwrite";
+import NotificationDropdown from "./NotificationDropdown";
 
 const Header = () => {
   const { userProfile, investments } = useAuth();
@@ -12,7 +12,7 @@ const Header = () => {
 
   // Calculate total portfolio value
   const totalPortfolioValue = investments.reduce((sum, investment) => {
-    if (investment.status === 'active') {
+    if (investment.status === "active") {
       return sum + investment.amount;
     }
     return sum;
@@ -39,7 +39,10 @@ const Header = () => {
             )}
           </p>
         </div> */}
-        <div className=' hidde'>InvestFlowBank</div>
+        {/* <div className=" ">InvestFlowBank</div> */}
+        <Link to="/" className="">
+          InvestFlowBank
+        </Link>
 
         {/* Header actions */}
         <div className="flex items-center space-x-4">
@@ -61,8 +64,8 @@ const Header = () => {
           <NotificationDropdown />
 
           {/* Settings */}
-          <button 
-            onClick={() => navigate('/settings')}
+          <button
+            onClick={() => navigate("/settings")}
             className="p-2 text-gray-400 hover:text-[#d8ed36] hover:bg-gray-800 rounded-lg transition-colors"
           >
             <Settings className="h-5 w-5" />
@@ -70,15 +73,21 @@ const Header = () => {
 
           {/* User avatar */}
           {userProfile && (
-            <button 
-              onClick={() => navigate('/profile')}
+            <button
+              onClick={() => navigate("/profile")}
               className="flex items-center space-x-3 p-1 hover:bg-gray-800 rounded-lg transition-colors duration-200"
             >
               <div className="w-8 h-8 bg-[#d8ed36] rounded-full flex items-center justify-center overflow-hidden">
-                {userProfile.profilePicture || localStorage.getItem(`profilePicture_${userProfile.userId}`) ? (
-                  <img 
-                    src={userProfile.profilePicture || localStorage.getItem(`profilePicture_${userProfile.userId}`)} 
-                    alt="Profile" 
+                {userProfile.profilePicture ||
+                localStorage.getItem(`profilePicture_${userProfile.userId}`) ? (
+                  <img
+                    src={
+                      userProfile.profilePicture ||
+                      localStorage.getItem(
+                        `profilePicture_${userProfile.userId}`
+                      )
+                    }
+                    alt="Profile"
                     className="w-full h-full object-cover"
                   />
                 ) : (

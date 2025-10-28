@@ -553,9 +553,9 @@ const WithdrawalModal: React.FC<WithdrawalModalProps> = ({ isOpen, onClose, onAd
             <button
               type="submit"
               disabled={isLoading || !canWithdraw}
-              className={`btn-primary flex-1 ${!canWithdraw ? 'opacity-50 cursor-not-allowed' : ''}`}
+              className={`btn-primary py-2 px-1 flex-1 ${!canWithdraw ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
-              {isLoading ? 'Processing...' : !canWithdraw ? 'Complete Verification First' : 'Request Withdrawal'}
+              {isLoading ? 'Processing...' : !canWithdraw ? 'Complete Verification First' : 'Withdrawal'}
             </button>
           </div>
         </form>

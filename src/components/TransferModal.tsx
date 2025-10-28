@@ -196,14 +196,14 @@ const TransferModal: React.FC<TransferModalProps> = ({ isOpen, onClose }) => {
                   name="recipient"
                   value={formData.recipient}
                   onChange={handleInputChange}
-                  className={`w-full pl-10 pr-10 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent ${
+                  className={`w-full bg-gray-800 text-white pl-10 pr-10 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#d8ed36] focus:border-transparent ${
                     errors.recipient ? 'border-red-300' : recipientInfo ? 'border-green-300' : 'border-gray-300'
                   }`}
                   placeholder="Enter email or account number"
                 />
                 {isValidatingRecipient && (
                   <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary-600"></div>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-[#d8ed36]"></div>
                   </div>
                 )}
                 {recipientInfo && !isValidatingRecipient && (
@@ -252,7 +252,7 @@ const TransferModal: React.FC<TransferModalProps> = ({ isOpen, onClose }) => {
                   step="0.01"
                   min="0.01"
                   max={availableBalance / 100}
-                  className={`w-full pl-10 pr-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent ${
+                  className={`w-full pl-10 bg-gray-800 text-white pr-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#d8ed36] focus:border-transparent ${
                     errors.amount ? 'border-red-300' : 'border-gray-300'
                   }`}
                   placeholder="0.00"
@@ -265,7 +265,7 @@ const TransferModal: React.FC<TransferModalProps> = ({ isOpen, onClose }) => {
                 </p>
               )}
               <p className="mt-1 text-xs text-gray-500">
-                Maximum: {formatCurrency(availableBalance)}
+                Availabel balance: {formatCurrency(availableBalance)}
               </p>
             </div>
 
@@ -283,7 +283,7 @@ const TransferModal: React.FC<TransferModalProps> = ({ isOpen, onClose }) => {
                   value={formData.description}
                   onChange={handleInputChange}
                   rows={3}
-                  className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent resize-none"
+                  className="w-full pl-10 pr-3 bg-gray-800 text-white py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#d8ed36] focus:border-transparent resize-none"
                   placeholder="Add a note for this transfer..."
                 />
               </div>
@@ -342,11 +342,11 @@ const TransferModal: React.FC<TransferModalProps> = ({ isOpen, onClose }) => {
               <button
                 type="submit"
                 disabled={isSubmitting || !formData.recipient || !formData.amount}
-                className="flex-1 px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center"
+                className="flex-1 px-4 py-2 text-sm font-medium text-[#160319] bg-[#67620d] rounded-lg hover:bg-[#e9df14] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center"
               >
                 {isSubmitting ? (
                   <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-[#dded63] mr-2"></div>
                     Processing...
                   </>
                 ) : (

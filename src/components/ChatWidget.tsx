@@ -112,7 +112,7 @@ const ChatWidget: React.FC = () => {
       {!isOpen ? (
         <button
           onClick={toggleChat}
-          className="bg-[#d8ed36] text-gray-800 rounded-full p-4 shadow-soft-lg hover:bg-[#c2d62f] transition-all duration-200 transform hover:scale-105"
+          className="bg-[#cee331] text-gray-800 rounded-full p-4 shadow-soft-lg hover:bg-[#c2d62f] transition-all duration-200 transform hover:scale-105"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -153,7 +153,7 @@ const ChatWidget: React.FC = () => {
             </div>
             <button
               onClick={toggleChat}
-              className="text-white hover:text-primary-200 transition-colors"
+              className="text-black hover:text-primary-200 transition-colors"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -198,13 +198,13 @@ const ChatWidget: React.FC = () => {
                     value={inputMessage}
                     onChange={(e) => setInputMessage(e.target.value)}
                     placeholder="Type your message..."
-                    className="flex-1 border border-gray-200 rounded-xl px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    className="flex-1 border bg-gray-800 border-gray-200 rounded-xl px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#cee331] focus:border-transparent"
                     disabled={isSending}
                   />
                   <button
                     type="submit"
                     disabled={isSending}
-                    className="bg-[#849313] text-white px-4 py-2 rounded-xl hover:bg-primary-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
+                    className="bg-[#cee331] text-black px-4 py-2 rounded-xl hover:bg-[#839117] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
                   >
                     <span>Send</span>
                     <svg
@@ -231,7 +231,7 @@ const ChatWidget: React.FC = () => {
                   </p>
                   <button
                     onClick={() => startNewSession()}
-                    className="w-full bg-[#c2d62f] text-white px-4 py-3 rounded-xl hover:bg-[#535d08] transition-colors flex items-center justify-center space-x-2"
+                    className="w-full bg-[#cee331] text-black px-4 py-3 rounded-xl hover:bg-[#535d08] transition-colors flex items-center justify-center space-x-2"
                   >
                     <span>Start Chat</span>
                     <svg

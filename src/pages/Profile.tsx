@@ -274,10 +274,10 @@ const Profile = () => {
         <div className="flex items-center justify-between">
           <div>
             <div className="flex items-center space-x-3 mb-2">
-              <h1 className="text-2xl font-bold text-gray-900">Profile Settings</h1>
+              <h1 className="text-2xl font-bold text-gray-50">Profile Settings</h1>
               <VerificationBadge 
                 status={getVerificationStatus(userProfile)} 
-                size="sm" 
+                size="xs" 
               />
             </div>
             <p className="text-gray-600 mt-1">Manage your account information and preferences</p>
