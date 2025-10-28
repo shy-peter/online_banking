@@ -93,15 +93,18 @@
   }
 
   .form-input {
-    @apply block w-full py-2 px-1 rounded border-gray-700 bg-red-400 text-white shadow-sm focus:border-[#d8ed36] focus:ring-[#d8ed36] sm:text-sm transition-colors duration-200;
+    /* @apply block w-full py-2 px-1 rounded border-gray-700 bg-black/20 text-white shadow-sm focus:border-[#d8ed36] focus:ring-[#d8ed36] sm:text-sm transition-colors duration-200; */
+    @apply border-0 bg-gray-800 text-white text-base box-border w-full text-sm leading-none h-12 outline-0 placeholder:font-normal placeholder:text-gray-400 px-3 py-2 rounded-lg transition-colors duration-200;
   }
 
   .input-field {
     @apply border-0 bg-gray-800 text-white text-base box-border w-full text-sm leading-none h-12 outline-0 placeholder:font-normal placeholder:text-gray-400 px-3 py-2 rounded-lg transition-colors duration-200;
   }
 
-  .input-field:focus {
-    @apply bg-white border border-primary-500 ring-1 ring-primary-500;
+  .input-field:focus,
+  .form-input:focus {
+    @apply border border-[#d8ed36] ring-1 ring-[#d8ed36];
+    /* bg-[#d8ed36] */
   }
 
   .form-label {

@@ -252,7 +252,7 @@ const EnhancedSignup = () => {
                     required
                     value={formData.lastName}
                     onChange={handleInputChange}
-                    className={`input-field pl-10 ${errors.lastName ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : ''}`}
+                    className={`input-field pl-10  ${errors.lastName ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : ''}`}
                     placeholder="Enter your last name"
                   />
                 </div>
