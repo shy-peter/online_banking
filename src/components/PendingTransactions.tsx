@@ -98,7 +98,7 @@ const PendingTransactions: React.FC<PendingTransactionsProps> = ({
 
   if (pendingTransactions.length === 0) {
     return (
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 text-center">
+      <div className="bg-white  rounded-lg shadow-sm border border-gray-200 p-8 text-center">
         <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
           <CheckCircle className="w-8 h-8 text-green-600" />
         </div>
@@ -116,7 +116,7 @@ const PendingTransactions: React.FC<PendingTransactionsProps> = ({
             <Clock className="w-5 h-5 text-amber-600" />
           </div>
           <div>
-            <h3 className="text-lg font-semibold text-gray-900">Pending Transactions</h3>
+            <h3 className="text-lg font-semibold text-gray-50">Pending Transactions</h3>
             <p className="text-sm text-gray-600">
               {pendingTransactions.length} transaction{pendingTransactions.length !== 1 ? 's' : ''} awaiting processing
             </p>
