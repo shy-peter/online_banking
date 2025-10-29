@@ -130,7 +130,7 @@ const IDDocumentUploadFallback: React.FC<IDDocumentUploadFallbackProps> = ({
     };
 
     return (
-      <div className="space-y-2">
+      <div className="space-y-6">
         <label className="form-label">
           {getLabel()} *
         </label>
@@ -165,7 +165,7 @@ const IDDocumentUploadFallback: React.FC<IDDocumentUploadFallbackProps> = ({
 
         {/* Upload Area */}
         {!currentFile && (
-          <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-primary-400 hover:bg-gray-50 transition-colors duration-200">
+          <div className="border-2 border-dashed border-gray-300 w-fi rounded-lg p-2 text-center hover:border-primary-400 hover:bg-gray-50 transition-colors duration-200">
             <input
               type="file"
               accept=".jpg,.jpeg,.png,.gif,.webp,.pdf"

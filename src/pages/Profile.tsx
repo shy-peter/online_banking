@@ -1,7 +1,7 @@
-import { useState, useRef } from 'react';
-import { motion } from 'framer-motion';
-import { useNavigate } from 'react-router-dom';
-import ClickToCopy from '../components/ClickToCopy';
+import { useState, useRef } from "react";
+import { motion } from "framer-motion";
+import { useNavigate } from "react-router-dom";
+import ClickToCopy from "../components/ClickToCopy";
 import {
   User,
   Mail,
@@ -27,47 +27,62 @@ import {
   EyeOff,
   Monitor,
   ArrowLeft,
-  AlertCircle
-} from 'lucide-react';
-import { useAuth } from '../contexts/AuthContext';
-import { formatCurrency } from '../lib/appwrite';
-import { checkProfileCompletion, getVerificationStatus } from '../lib/verification';
-import LoadingSpinner from '../components/LoadingSpinner';
-import VerificationBadge from '../components/VerificationBadge';
-import PasswordChangeModal from '../components/PasswordChangeModal';
-import LoginHistoryModal from '../components/LoginHistoryModal';
-import IDDocumentUpload from '../components/IDDocumentUpload';
-import IDDocumentUploadFallback from '../components/IDDocumentUploadFallback';
+  AlertCircle,
+} from "lucide-react";
+import { useAuth } from "../contexts/AuthContext";
+import { formatCurrency } from "../lib/appwrite";
+import {
+  checkProfileCompletion,
+  getVerificationStatus,
+} from "../lib/verification";
+import LoadingSpinner from "../components/LoadingSpinner";
+import VerificationBadge from "../components/VerificationBadge";
+import PasswordChangeModal from "../components/PasswordChangeModal";
+import LoginHistoryModal from "../components/LoginHistoryModal";
+import IDDocumentUpload from "../components/IDDocumentUpload";
+import IDDocumentUploadFallback from "../components/IDDocumentUploadFallback";
 
 const Profile = () => {
-  const { user, userProfile, investments, updateUserProfile, changePassword, getLoginHistory, terminateSession, terminateAllOtherSessions, resendVerificationEmail } = useAuth();
+  const {
+    user,
+    userProfile,
+    investments,
+    updateUserProfile,
+    changePassword,
+    getLoginHistory,
+    terminateSession,
+    terminateAllOtherSessions,
+    resendVerificationEmail,
+  } = useAuth();
   const navigate = useNavigate();
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState({
-    name: userProfile?.name || '',
-    phone: userProfile?.phone || '',
-    firstName: userProfile?.personalInfo?.firstName || '',
-    lastName: userProfile?.personalInfo?.lastName || '',
-    dateOfBirth: userProfile?.personalInfo?.dateOfBirth || '',
-    address: userProfile?.personalInfo?.address || '',
-    city: userProfile?.personalInfo?.city || '',
-    state: userProfile?.personalInfo?.state || '',
-    zipCode: userProfile?.personalInfo?.zipCode || '',
-    country: userProfile?.personalInfo?.country || '',
-    occupation: userProfile?.personalInfo?.occupation || '',
-    annualIncome: userProfile?.personalInfo?.annualIncome || '',
-    ssn: userProfile?.personalInfo?.ssn || '',
-    idType: userProfile?.personalInfo?.idType || '',
-    secretPhrase: userProfile?.secretPhrase || ''
+    name: userProfile?.name || "",
+    phone: userProfile?.phone || "",
+    firstName: userProfile?.personalInfo?.firstName || "",
+    lastName: userProfile?.personalInfo?.lastName || "",
+    dateOfBirth: userProfile?.personalInfo?.dateOfBirth || "",
+    address: userProfile?.personalInfo?.address || "",
+    city: userProfile?.personalInfo?.city || "",
+    state: userProfile?.personalInfo?.state || "",
+    zipCode: userProfile?.personalInfo?.zipCode || "",
+    country: userProfile?.personalInfo?.country || "",
+    occupation: userProfile?.personalInfo?.occupation || "",
+    annualIncome: userProfile?.personalInfo?.annualIncome || "",
+    ssn: userProfile?.personalInfo?.ssn || "",
+    idType: userProfile?.personalInfo?.idType || "",
+    secretPhrase: userProfile?.secretPhrase || "",
   });
   const [isLoading, setIsLoading] = useState(false);
   const [profilePicture, setProfilePicture] = useState<string | File | null>(
-    userProfile?.profilePicture || localStorage.getItem(`profilePicture_${user?.$id}`) || null
+    userProfile?.profilePicture ||
+      localStorage.getItem(`profilePicture_${user?.$id}`) ||
+      null
   );
   const [documents, setDocuments] = useState({
     front: undefined as { id: string; name: string } | undefined,
     back: undefined as { id: string; name: string } | undefined,
-    dataPage: undefined as { id: string; name: string } | undefined
+    dataPage: undefined as { id: string; name: string } | undefined,
   });
   const [useStorageFallback] = useState(true); // Set to true to use fallback
   const [isUploading, setIsUploading] = useState(false);
@@ -79,24 +94,30 @@ const Profile = () => {
   const [showLoginHistoryModal, setShowLoginHistoryModal] = useState(false);
   const [isResendingEmail, setIsResendingEmail] = useState(false);
 
-  const handleEditChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleEditChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
     setEditData({
       ...editData,
-      [e.target.name]: e.target.value
+      [e.target.name]: e.target.value,
     });
   };
 
-  const handleDocumentUpload = (fileId: string, fileName: string, documentSide: string) => {
-    setDocuments(prev => ({
+  const handleDocumentUpload = (
+    fileId: string,
+    fileName: string,
+    documentSide: string
+  ) => {
+    setDocuments((prev) => ({
       ...prev,
-      [documentSide]: { id: fileId, name: fileName }
+      [documentSide]: { id: fileId, name: fileName },
     }));
   };
 
   const handleDocumentRemove = (documentSide: string) => {
-    setDocuments(prev => ({
+    setDocuments((prev) => ({
       ...prev,
-      [documentSide]: undefined
+      [documentSide]: undefined,
     }));
   };
 
@@ -116,23 +137,25 @@ const Profile = () => {
           zipCode: editData.zipCode,
           country: editData.country,
           occupation: editData.occupation,
-          annualIncome: editData.annualIncome ? Number(editData.annualIncome) : undefined,
+          annualIncome: editData.annualIncome
+            ? Number(editData.annualIncome)
+            : undefined,
           ssn: editData.ssn,
-          idType: editData.idType
+          idType: editData.idType,
         },
         documents: {
           front: documents.front,
           back: documents.back,
-          dataPage: documents.dataPage
+          dataPage: documents.dataPage,
         },
-        secretPhrase: editData.secretPhrase
+        secretPhrase: editData.secretPhrase,
       });
-      
+
       if (result.success) {
         setIsEditing(false);
       }
     } catch (error) {
-      console.error('Error updating profile:', error);
+      console.error("Error updating profile:", error);
     } finally {
       setIsLoading(false);
     }
@@ -143,7 +166,7 @@ const Profile = () => {
     try {
       await resendVerificationEmail();
     } catch (error) {
-      console.error('Error resending verification email:', error);
+      console.error("Error resending verification email:", error);
     } finally {
       setIsResendingEmail(false);
     }
@@ -151,21 +174,21 @@ const Profile = () => {
 
   const handleCancel = () => {
     setEditData({
-      name: userProfile?.name || '',
-      phone: userProfile?.phone || '',
-      firstName: userProfile?.personalInfo?.firstName || '',
-      lastName: userProfile?.personalInfo?.lastName || '',
-      dateOfBirth: userProfile?.personalInfo?.dateOfBirth || '',
-      address: userProfile?.personalInfo?.address || '',
-      city: userProfile?.personalInfo?.city || '',
-      state: userProfile?.personalInfo?.state || '',
-      zipCode: userProfile?.personalInfo?.zipCode || '',
-      country: userProfile?.personalInfo?.country || '',
-      occupation: userProfile?.personalInfo?.occupation || '',
-      annualIncome: userProfile?.personalInfo?.annualIncome || '',
-      ssn: userProfile?.personalInfo?.ssn || '',
-      idType: userProfile?.personalInfo?.idType || '',
-      secretPhrase: userProfile?.secretPhrase || ''
+      name: userProfile?.name || "",
+      phone: userProfile?.phone || "",
+      firstName: userProfile?.personalInfo?.firstName || "",
+      lastName: userProfile?.personalInfo?.lastName || "",
+      dateOfBirth: userProfile?.personalInfo?.dateOfBirth || "",
+      address: userProfile?.personalInfo?.address || "",
+      city: userProfile?.personalInfo?.city || "",
+      state: userProfile?.personalInfo?.state || "",
+      zipCode: userProfile?.personalInfo?.zipCode || "",
+      country: userProfile?.personalInfo?.country || "",
+      occupation: userProfile?.personalInfo?.occupation || "",
+      annualIncome: userProfile?.personalInfo?.annualIncome || "",
+      ssn: userProfile?.personalInfo?.ssn || "",
+      idType: userProfile?.personalInfo?.idType || "",
+      secretPhrase: userProfile?.secretPhrase || "",
     });
     setIsEditing(false);
   };
@@ -175,17 +198,17 @@ const Profile = () => {
     const file = event.target.files?.[0];
     if (file) {
       // Validate file type
-      if (!file.type.startsWith('image/')) {
-        alert('Please select an image file');
+      if (!file.type.startsWith("image/")) {
+        alert("Please select an image file");
         return;
       }
-      
+
       // Validate file size (max 5MB)
       if (file.size > 5 * 1024 * 1024) {
-        alert('File size must be less than 5MB');
+        alert("File size must be less than 5MB");
         return;
       }
-      
+
       // Create preview URL
       const url = URL.createObjectURL(file);
       setPreviewUrl(url);
@@ -195,27 +218,27 @@ const Profile = () => {
 
   const handleUploadPicture = async () => {
     if (!profilePicture) return;
-    
+
     setIsUploading(true);
     try {
       // Convert file to base64 for storage
       const base64 = await convertToBase64(profilePicture as unknown as File);
-      
+
       // Update user profile with new picture
       const result = await updateUserProfile({
-        profilePicture: base64 as string
+        profilePicture: base64 as string,
       });
-      
+
       if (result.success) {
         setPreviewUrl(null);
         // Clear the file input
         if (fileInputRef.current) {
-          (fileInputRef.current as HTMLInputElement).value = '';
+          (fileInputRef.current as HTMLInputElement).value = "";
         }
       }
     } catch (error) {
-      console.error('Error uploading profile picture:', error);
-      alert('Failed to upload profile picture');
+      console.error("Error uploading profile picture:", error);
+      alert("Failed to upload profile picture");
     } finally {
       setIsUploading(false);
     }
@@ -225,19 +248,19 @@ const Profile = () => {
     setIsUploading(true);
     try {
       const result = await updateUserProfile({
-        profilePicture: null
+        profilePicture: null,
       });
-      
+
       if (result.success) {
         setProfilePicture(null);
         setPreviewUrl(null);
         if (fileInputRef.current) {
-          (fileInputRef.current as HTMLInputElement).value = '';
+          (fileInputRef.current as HTMLInputElement).value = "";
         }
       }
     } catch (error) {
-      console.error('Error removing profile picture:', error);
-      alert('Failed to remove profile picture');
+      console.error("Error removing profile picture:", error);
+      alert("Failed to remove profile picture");
     } finally {
       setIsUploading(false);
     }
@@ -248,18 +271,25 @@ const Profile = () => {
       const reader = new FileReader();
       reader.readAsDataURL(file);
       reader.onload = () => resolve(reader.result);
-      reader.onerror = error => reject(error);
+      reader.onerror = (error) => reject(error);
     });
   };
 
   // Get user's investment plan
   // Since investmentPlan is not stored in user profile, we'll show a default or calculate from investments
   const userPlan: any = null; // Could be calculated from user's investments if needed
-  
+
   // Calculate portfolio stats
-  const totalInvested = investments.reduce((sum, inv) => sum + (inv.status === 'active' ? inv.amount : 0), 0);
-  const activeInvestments = investments.filter(inv => inv.status === 'active').length;
-  const joinDate = userProfile?.createdAt ? new Date(userProfile.createdAt).toLocaleDateString('en-US') : 'N/A';
+  const totalInvested = investments.reduce(
+    (sum, inv) => sum + (inv.status === "active" ? inv.amount : 0),
+    0
+  );
+  const activeInvestments = investments.filter(
+    (inv) => inv.status === "active"
+  ).length;
+  const joinDate = userProfile?.createdAt
+    ? new Date(userProfile.createdAt).toLocaleDateString("en-US")
+    : "N/A";
   const profileCompletion = checkProfileCompletion(userProfile);
 
   return (
@@ -274,20 +304,24 @@ const Profile = () => {
         <div className="flex items-center justify-between">
           <div>
             <div className="flex items-center space-x-3 mb-2">
-              <h1 className="text-2xl font-bold text-gray-50">Profile Settings</h1>
-              <VerificationBadge 
-                status={getVerificationStatus(userProfile)} 
-                size="xs" 
+              <h1 className="text-2xl font-bold text-gray-50">
+                Profile Settings
+              </h1>
+              <VerificationBadge
+                status={getVerificationStatus(userProfile)}
+                size="xs"
               />
             </div>
-            <p className="text-gray-600 mt-1">Manage your account information and preferences</p>
+            <p className="text-gray-600 mt-1">
+              Manage your account information and preferences
+            </p>
           </div>
           <button
-            onClick={() => navigate('/dashboard')}
+            onClick={() => navigate("/dashboard")}
             className="flex md:hidden items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors duration-200"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
-            <span className='hidden md:block'>Back to Dashboard</span>
+            <span className="hidden md:block">Back to Dashboard</span>
           </button>
         </div>
       </motion.div>
@@ -308,13 +342,20 @@ const Profile = () => {
                   Complete Your Profile for Verification
                 </h3>
                 <p className="text-yellow-700 mb-4">
-                  Your profile is {profileCompletion.completionPercentage}% complete. Please complete all required fields to enable withdrawals and get verified.
+                  Your profile is {profileCompletion.completionPercentage}%
+                  complete. Please complete all required fields to enable
+                  withdrawals and get verified.
                 </p>
                 <div className="space-y-2">
-                  <p className="text-sm font-medium text-yellow-800">Missing fields:</p>
+                  <p className="text-sm font-medium text-yellow-800">
+                    Missing fields:
+                  </p>
                   <div className="flex flex-wrap gap-2">
                     {profileCompletion.missingFields.map((field, index) => (
-                      <span key={index} className="px-2 py-1 bg-yellow-100 text-yellow-800 text-xs rounded-full">
+                      <span
+                        key={index}
+                        className="px-2 py-1 bg-yellow-100 text-yellow-800 text-xs rounded-full"
+                      >
                         {field}
                       </span>
                     ))}
@@ -342,8 +383,12 @@ const Profile = () => {
                     <User className="w-5 h-5 text-primary-600" />
                   </div>
                   <div>
-                    <h3 className="text-lg font-semibold text-gray-900">Personal Information</h3>
-                    <p className="text-sm text-gray-600">Update your account details</p>
+                    <h3 className="text-lg font-semibold text-gray-900">
+                      Personal Information
+                    </h3>
+                    <p className="text-sm text-gray-600">
+                      Update your account details
+                    </p>
                   </div>
                 </div>
                 {!isEditing ? (
@@ -382,31 +427,41 @@ const Profile = () => {
               <div className="flex items-center space-x-6">
                 <div className="relative">
                   <div className="w-20 h-20 bg-gradient-to-r from-primary-500 to-primary-600 rounded-full flex items-center justify-center overflow-hidden">
-                    {previewUrl || (profilePicture && typeof profilePicture === 'string') ? (
-                      <img 
-                        src={previewUrl || (typeof profilePicture === 'string' ? profilePicture : '')} 
-                        alt="Profile" 
+                    {previewUrl ||
+                    (profilePicture && typeof profilePicture === "string") ? (
+                      <img
+                        src={
+                          previewUrl ||
+                          (typeof profilePicture === "string"
+                            ? profilePicture
+                            : "")
+                        }
+                        alt="Profile"
                         className="w-full h-full object-cover"
                       />
                     ) : (
                       <span className="text-2xl font-bold text-white">
-                        {(userProfile?.name || user?.name || 'U').charAt(0).toUpperCase()}
+                        {(userProfile?.name || user?.name || "U")
+                          .charAt(0)
+                          .toUpperCase()}
                       </span>
                     )}
                   </div>
-                  
+
                   {/* Upload overlay */}
                   <div className="absolute inset-0 bg-black bg-opacity-50 rounded-full flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity duration-200">
                     <Camera className="w-6 h-6 text-white" />
                   </div>
                 </div>
-                
+
                 <div className="flex-1">
                   <h4 className="text-lg font-semibold text-gray-900">
                     {userProfile?.name || user?.name}
                   </h4>
-                  <p className="text-sm text-gray-600">{userPlan?.name || 'Investment Plan'}</p>
-                  
+                  <p className="text-sm text-gray-600">
+                    {userPlan?.name || "Investment Plan"}
+                  </p>
+
                   <div className="flex items-center space-x-3 mt-2">
                     <input
                       ref={fileInputRef}
@@ -415,17 +470,21 @@ const Profile = () => {
                       onChange={handleFileSelect}
                       className="hidden"
                     />
-                    
-                    <button 
-                        onClick={() => (fileInputRef.current as unknown as HTMLInputElement)?.click()}
+
+                    <button
+                      onClick={() =>
+                        (
+                          fileInputRef.current as unknown as HTMLInputElement
+                        )?.click()
+                      }
                       className="text-sm text-primary-600 hover:text-primary-700 flex items-center"
                     >
                       <Upload className="w-4 h-4 mr-1" />
-                      {previewUrl ? 'Change Photo' : 'Upload Photo'}
+                      {previewUrl ? "Change Photo" : "Upload Photo"}
                     </button>
-                    
+
                     {(previewUrl || profilePicture) && (
-                      <button 
+                      <button
                         onClick={handleRemovePicture}
                         disabled={isUploading}
                         className="text-sm text-red-600 hover:text-red-700 flex items-center disabled:opacity-50"
@@ -435,7 +494,7 @@ const Profile = () => {
                       </button>
                     )}
                   </div>
-                  
+
                   {/* Upload/Remove buttons */}
                   {previewUrl && (
                     <div className="flex items-center space-x-2 mt-2">
@@ -456,9 +515,12 @@ const Profile = () => {
                       <button
                         onClick={() => {
                           setPreviewUrl(null);
-                          setProfilePicture(userProfile?.profilePicture || null);
+                          setProfilePicture(
+                            userProfile?.profilePicture || null
+                          );
                           if (fileInputRef.current) {
-                            (fileInputRef.current as HTMLInputElement).value = '';
+                            (fileInputRef.current as HTMLInputElement).value =
+                              "";
                           }
                         }}
                         className="btn-secondary px-3 py-1 text-xs"
@@ -479,14 +541,14 @@ const Profile = () => {
                     <input
                       name="name"
                       type="text"
-                      className="input-field border-red-500 p-2"
+                      className="input-field  border-red-500 p-2"
                       value={editData.name}
                       onChange={handleEditChange}
                     />
                   ) : (
-                    <div className="form-input bg-gray-50 flex items-center">
+                    <div className="form-input bg-gray-700   flex items-center">
                       <User className="w-4 h-4 text-gray-400 mr-3" />
-                      {userProfile?.name || 'Not provided'}
+                      {userProfile?.name || "Not provided"}
                     </div>
                   )}
                 </div>
@@ -503,25 +565,33 @@ const Profile = () => {
                       placeholder="Enter your phone number"
                     />
                   ) : (
-                    <ClickToCopy text={userProfile?.phone || ''} className="form-input bg-gray-50 flex items-center">
+                    <ClickToCopy
+                      text={userProfile?.phone || ""}
+                      className="form-input bg-gray-700 flex items-center"
+                    >
                       <Mail className="w-4 h-4 text-gray-400 mr-3" />
-                      <span>{userProfile?.phone || 'Not provided'}</span>
+                      <span>{userProfile?.phone || "Not provided"}</span>
                     </ClickToCopy>
                   )}
                 </div>
 
-                <div c>
+                <div>
                   <label className="form-label">Email Address</label>
-                  <ClickToCopy text={user?.email || ''} className="form-input bg-gray-50 flex items-center">
-                    <Mail className="w-4 h-4 text-gray-400 mr-3" />
-                    <span>{user?.email || 'Not provided'}</span>
+                  <ClickToCopy
+                    text={user?.email || ""}
+                    className="form-input bg-gray-700  flex items-center"
+                  >
+                    <Mail className="w-4 h-4  text-gray-400 mr-3" />
+                    <span>{user?.email || "Not provided"}</span>
                   </ClickToCopy>
-                  <p className="text-xs text-red-500 mt-1 ">Email cannot be changed</p>
+                  <p className="text-xs  text-red-500 mt-1 ">
+                    Email cannot be changed
+                  </p>
                 </div>
 
                 <div>
                   <label className="form-label">Member Since</label>
-                  <div className="form-input bg-gray-50 flex items-center">
+                  <div className="form-input bg-gray-700 flex items-center">
                     <Calendar className="w-4 h-4 text-gray-400 mr-3" />
                     {joinDate}
                   </div>
@@ -529,17 +599,17 @@ const Profile = () => {
 
                 <div>
                   <label className="form-label">Account Status</label>
-                  <div className="form-input bg-gray-50 flex items-center">
+                  <div className="form-input bg-gray-700 flex items-center">
                     <Shield className="w-4 h-4 text-success-500 mr-3" />
                     <span className="text-success-600 font-medium">
-                      {userProfile?.status === 'active' ? 'Active' : 'Inactive'}
+                      {userProfile?.status === "active" ? "Active" : "Inactive"}
                     </span>
                   </div>
                 </div>
 
                 <div>
                   <label className="form-label">Account Number</label>
-                  <div className="form-input bg-gray-50 flex items-center justify-between">
+                  <div className="form-input bg-gray-700 flex items-center justify-between">
                     <div className="flex items-center">
                       <Hash className="w-4 h-4 text-gray-400 mr-3" />
                       {userProfile?.accountNumber ? (
@@ -554,7 +624,11 @@ const Profile = () => {
                     </div>
                     {userProfile?.accountNumber ? (
                       <button
-                        onClick={() => navigator.clipboard.writeText(userProfile.accountNumber)}
+                        onClick={() =>
+                          navigator.clipboard.writeText(
+                            userProfile.accountNumber
+                          )
+                        }
                         className="text-primary-600 hover:text-primary-700 text-sm ml-2"
                         title="Copy account number"
                       >
@@ -571,11 +645,13 @@ const Profile = () => {
                 {/* Email Verification Status */}
                 <div>
                   <label className="form-label">Email Verification</label>
-                  <div className="form-input bg-gray-50 flex items-center justify-between">
+                  <div className="form-input bg-gray-700 flex items-center justify-between">
                     <div className="flex items-center">
                       <Mail className="w-4 h-4 text-gray-400 mr-3" />
                       <span className="text-sm">
-                        {userProfile?.isVerified ? 'Verified' : 'Pending Verification'}
+                        {userProfile?.isVerified
+                          ? "Verified"
+                          : "Pending Verification"}
                       </span>
                     </div>
                     {!userProfile?.isVerified && (
@@ -584,14 +660,46 @@ const Profile = () => {
                         disabled={isResendingEmail}
                         className="text-primary-600 hover:text-primary-700 text-sm disabled:opacity-50"
                       >
-                        {isResendingEmail ? 'Sending...' : 'Resend Email'}
+                        {isResendingEmail ? "Sending..." : "Resend Email"}
                       </button>
                     )}
                   </div>
                   {!userProfile?.isVerified && (
                     <p className="text-xs text-gray-500 mt-1">
-                      Please check your email and click the verification link to activate your account.
+                      Please check your email and click the verification link to
+                      activate your account.
                     </p>
+                  )}
+                </div>
+                <div>
+                  <label className="form-label">Secret Phrase</label>
+                  {isEditing ? (
+                    <div className="relative">
+                      <input
+                        name="secretPhrase"
+                        type={showSecretPhrase ? "text" : "password"}
+                        className="input-field pr-10 p-2"
+                        value={editData.secretPhrase}
+                        onChange={handleEditChange}
+                        placeholder="Enter your secret phrase"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowSecretPhrase(!showSecretPhrase)}
+                        className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                      >
+                        {showSecretPhrase ? (
+                          <EyeOff className="h-4 w-4 text-gray-400" />
+                        ) : (
+                          <Eye className="h-4 w-4 text-gray-400" />
+                        )}
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="form-input bg-gray-700 flex items-center">
+                      <Key className="w-4 h-4 text-gray-400 mr-3" />
+                      {userProfile?.secretPhrase ? "••••••" : "Not provided"}
+                    </div>
                   )}
                 </div>
               </div>
@@ -610,9 +718,9 @@ const Profile = () => {
                       placeholder="Enter your first name"
                     />
                   ) : (
-                    <div className="form-input bg-gray-50 flex items-center">
+                    <div className="form-input bg-gray-700 flex items-center">
                       <User className="w-4 h-4 text-gray-400 mr-3" />
-                      {userProfile?.personalInfo?.firstName || 'Not provided'}
+                      {userProfile?.personalInfo?.firstName || "Not provided"}
                     </div>
                   )}
                 </div>
@@ -629,9 +737,9 @@ const Profile = () => {
                       placeholder="Enter your last name"
                     />
                   ) : (
-                    <div className="form-input bg-gray-50 flex items-center">
+                    <div className="form-input bg-gray-700 flex items-center">
                       <User className="w-4 h-4 text-gray-400 mr-3" />
-                      {userProfile?.personalInfo?.lastName || 'Not provided'}
+                      {userProfile?.personalInfo?.lastName || "Not provided"}
                     </div>
                   )}
                 </div>
@@ -647,9 +755,9 @@ const Profile = () => {
                       onChange={handleEditChange}
                     />
                   ) : (
-                    <div className="form-input bg-gray-50 flex items-center">
+                    <div className="form-input bg-gray-700 flex items-center">
                       <Calendar className="w-4 h-4 text-gray-400 mr-3" />
-                      {userProfile?.personalInfo?.dateOfBirth || 'Not provided'}
+                      {userProfile?.personalInfo?.dateOfBirth || "Not provided"}
                     </div>
                   )}
                 </div>
@@ -666,9 +774,9 @@ const Profile = () => {
                       placeholder="Enter your occupation"
                     />
                   ) : (
-                    <div className="form-input bg-gray-50 flex items-center">
+                    <div className="form-input bg-gray-700 flex items-center">
                       <Briefcase className="w-4 h-4 text-gray-400 mr-3" />
-                      {userProfile?.personalInfo?.occupation || 'Not provided'}
+                      {userProfile?.personalInfo?.occupation || "Not provided"}
                     </div>
                   )}
                 </div>
@@ -685,10 +793,11 @@ const Profile = () => {
                       placeholder="Enter your annual income"
                     />
                   ) : (
-                    <div className="form-input bg-gray-50 flex items-center">
+                    <div className="form-input bg-gray-700 flex items-center">
                       <DollarSign className="w-4 h-4 text-gray-400 mr-3" />
-                      {userProfile?.personalInfo?.annualIncome ? 
-                        formatCurrency(userProfile.personalInfo.annualIncome) : 'Not provided'}
+                      {userProfile?.personalInfo?.annualIncome
+                        ? formatCurrency(userProfile.personalInfo.annualIncome)
+                        : "Not provided"}
                     </div>
                   )}
                 </div>
@@ -705,9 +814,9 @@ const Profile = () => {
                       placeholder="Enter your address"
                     />
                   ) : (
-                    <div className="form-input bg-gray-50 flex items-center">
+                    <div className="form-input bg-gray-700 flex items-center">
                       <MapPin className="w-4 h-4 text-gray-400 mr-3" />
-                      {userProfile?.personalInfo?.address || 'Not provided'}
+                      {userProfile?.personalInfo?.address || "Not provided"}
                     </div>
                   )}
                 </div>
@@ -724,9 +833,9 @@ const Profile = () => {
                       placeholder="Enter your city"
                     />
                   ) : (
-                    <div className="form-input bg-gray-50 flex items-center">
+                    <div className="form-input bg-gray-700 flex items-center">
                       <MapPin className="w-4 h-4 text-gray-400 mr-3" />
-                      {userProfile?.personalInfo?.city || 'Not provided'}
+                      {userProfile?.personalInfo?.city || "Not provided"}
                     </div>
                   )}
                 </div>
@@ -743,9 +852,9 @@ const Profile = () => {
                       placeholder="Enter your state"
                     />
                   ) : (
-                    <div className="form-input bg-gray-50 flex items-center">
+                    <div className="form-input bg-gray-700 flex items-center">
                       <MapPin className="w-4 h-4 text-gray-400 mr-3" />
-                      {userProfile?.personalInfo?.state || 'Not provided'}
+                      {userProfile?.personalInfo?.state || "Not provided"}
                     </div>
                   )}
                 </div>
@@ -762,9 +871,9 @@ const Profile = () => {
                       placeholder="Enter your ZIP code"
                     />
                   ) : (
-                    <div className="form-input bg-gray-50 flex items-center">
+                    <div className="form-input bg-gray-700 flex items-center">
                       <Hash className="w-4 h-4 text-gray-400 mr-3" />
-                      {userProfile?.personalInfo?.zipCode || 'Not provided'}
+                      {userProfile?.personalInfo?.zipCode || "Not provided"}
                     </div>
                   )}
                 </div>
@@ -815,9 +924,9 @@ const Profile = () => {
                       <option value="Other">Other</option>
                     </select>
                   ) : (
-                    <div className="form-input bg-gray-50 flex items-center">
+                    <div className="form-input bg-gray-700 flex items-center">
                       <MapPin className="w-4 h-4 text-gray-400 mr-3" />
-                      {userProfile?.personalInfo?.country || 'Not provided'}
+                      {userProfile?.personalInfo?.country || "Not provided"}
                     </div>
                   )}
                 </div>
@@ -828,7 +937,7 @@ const Profile = () => {
                     <div className="relative">
                       <input
                         name="ssn"
-                        type={showSSN ? 'text' : 'password'}
+                        type={showSSN ? "text" : "password"}
                         className="input-field pr-10 p-2"
                         value={editData.ssn}
                         onChange={handleEditChange}
@@ -847,9 +956,11 @@ const Profile = () => {
                       </button>
                     </div>
                   ) : (
-                    <div className="form-input bg-gray-50 flex items-center">
+                    <div className="form-input bg-gray-700 flex items-center">
                       <Shield className="w-4 h-4 text-gray-400 mr-3" />
-                      {userProfile?.personalInfo?.ssn ? '•••-••-••••' : 'Not provided'}
+                      {userProfile?.personalInfo?.ssn
+                        ? "•••-••-••••"
+                        : "Not provided"}
                     </div>
                   )}
                 </div>
@@ -870,9 +981,9 @@ const Profile = () => {
                       <option value="national-id">National ID</option>
                     </select>
                   ) : (
-                    <div className="form-input bg-gray-50 flex items-center">
+                    <div className="form-input bg-gray-700 flex items-center">
                       <FileText className="w-4 h-4 text-gray-400 mr-3" />
-                      {userProfile?.personalInfo?.idType || 'Not provided'}
+                      {userProfile?.personalInfo?.idType || "Not provided"}
                     </div>
                   )}
                 </div>
@@ -885,10 +996,14 @@ const Profile = () => {
                       <div className="flex items-start space-x-3">
                         <FileText className="w-5 h-5 text-blue-600 mt-0.5" />
                         <div>
-                          <h4 className="text-sm font-medium text-blue-800">Identity Verification</h4>
+                          <h4 className="text-sm font-medium text-blue-800">
+                            Identity Verification
+                          </h4>
                           <p className="text-sm text-blue-700 mt-1">
-                            Please upload clear, high-quality images of your {editData.idType.replace('-', ' ')}. 
-                            All documents will be securely stored and used for verification purposes only.
+                            Please upload clear, high-quality images of your{" "}
+                            {editData.idType.replace("-", " ")}. All documents
+                            will be securely stored and used for verification
+                            purposes only.
                           </p>
                         </div>
                       </div>
@@ -896,15 +1011,27 @@ const Profile = () => {
 
                     {useStorageFallback ? (
                       <IDDocumentUploadFallback
-                        idType={editData.idType as 'drivers-license' | 'passport' | 'state-id' | 'national-id'}
+                        idType={
+                          editData.idType as
+                            | "drivers-license"
+                            | "passport"
+                            | "state-id"
+                            | "national-id"
+                        }
                         onUpload={handleDocumentUpload}
                         onRemove={handleDocumentRemove}
                         currentFiles={documents}
                       />
                     ) : (
                       <IDDocumentUpload
-                        idType={editData.idType as 'drivers-license' | 'passport' | 'state-id' | 'national-id'}
-                        userId={user?.$id || ''}
+                        idType={
+                          editData.idType as
+                            | "drivers-license"
+                            | "passport"
+                            | "state-id"
+                            | "national-id"
+                        }
+                        userId={user?.$id || ""}
                         onUpload={handleDocumentUpload}
                         onRemove={handleDocumentRemove}
                         currentFiles={documents}
@@ -913,37 +1040,7 @@ const Profile = () => {
                   </div>
                 )}
 
-                <div>
-                  <label className="form-label">Secret Phrase</label>
-                  {isEditing ? (
-                    <div className="relative">
-                      <input
-                        name="secretPhrase"
-                        type={showSecretPhrase ? 'text' : 'password'}
-                        className="input-field pr-10 p-2"
-                        value={editData.secretPhrase}
-                        onChange={handleEditChange}
-                        placeholder="Enter your secret phrase"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowSecretPhrase(!showSecretPhrase)}
-                        className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                      >
-                        {showSecretPhrase ? (
-                          <EyeOff className="h-4 w-4 text-gray-400" />
-                        ) : (
-                          <Eye className="h-4 w-4 text-gray-400" />
-                        )}
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="form-input bg-gray-50 flex items-center">
-                      <Key className="w-4 h-4 text-gray-400 mr-3" />
-                      {userProfile?.secretPhrase ? '••••••' : 'Not provided'}
-                    </div>
-                  )}
-                </div>
+                
               </div>
             </div>
           </div>
@@ -964,7 +1061,9 @@ const Profile = () => {
                   <TrendingUp className="w-5 h-5 text-success-600" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900">Investment Plan</h3>
+                  <h3 className="text-lg font-semibold text-gray-900">
+                    Investment Plan
+                  </h3>
                   <p className="text-sm text-gray-600">Current subscription</p>
                 </div>
               </div>
@@ -973,15 +1072,22 @@ const Profile = () => {
               {userPlan ? (
                 <div>
                   <div className="text-center mb-4">
-                    <h4 className="text-xl font-bold text-gray-900">{userPlan.name}</h4>
+                    <h4 className="text-xl font-bold text-gray-900">
+                      {userPlan.name}
+                    </h4>
                     <div className="text-3xl font-bold text-primary-600 mt-2">
                       {userPlan.interestRate}%
                     </div>
-                    <p className="text-sm text-gray-600">Annual Interest Rate</p>
+                    <p className="text-sm text-gray-600">
+                      Annual Interest Rate
+                    </p>
                   </div>
                   <div className="space-y-3">
                     {userPlan.features.map((feature: any, index: number) => (
-                      <div key={index} className="flex items-center text-sm text-gray-600">
+                      <div
+                        key={index}
+                        className="flex items-center text-sm text-gray-600"
+                      >
                         <div className="w-1.5 h-1.5 bg-success-500 rounded-full mr-3"></div>
                         {feature}
                       </div>
@@ -1004,25 +1110,29 @@ const Profile = () => {
           {/* Quick Stats */}
           <div className="card">
             <div className="card-header">
-              <h3 className="text-lg font-semibold text-gray-900">Portfolio Summary</h3>
+              <h3 className="text-lg font-semibold text-gray-900">
+                Portfolio Summary
+              </h3>
             </div>
             <div className="card-body space-y-4">
               <div className="flex items-center justify-between py-2">
                 <span className="text-sm text-gray-600">Total Invested</span>
-                <span className="font-semibold text-gray-900">
+                <span className="font-semibold text-gray-500">
                   {formatCurrency(totalInvested)}
                 </span>
               </div>
               <div className="flex items-center justify-between py-2">
-                <span className="text-sm text-gray-600">Active Investments</span>
-                <span className="font-semibold text-gray-900">
+                <span className="text-sm text-gray-600">
+                  Active Investments
+                </span>
+                <span className="font-semibold text-gray-500">
                   {activeInvestments}
                 </span>
               </div>
               <div className="flex items-center justify-between py-2">
                 <span className="text-sm text-gray-600">Account Type</span>
                 <span className="font-semibold text-primary-600">
-                  {userPlan?.name || 'Standard'}
+                  {userPlan?.name || "Standard"}
                 </span>
               </div>
             </div>
@@ -1045,38 +1155,48 @@ const Profile = () => {
                 <Lock className="w-5 h-5 text-danger-600" />
               </div>
               <div>
-                <h3 className="text-lg font-semibold text-gray-900">Security</h3>
-                <p className="text-sm text-gray-600">Manage your account security</p>
+                <h3 className="text-lg font-semibold text-gray-900">
+                  Security
+                </h3>
+                <p className="text-sm text-gray-600">
+                  Manage your account security
+                </p>
               </div>
             </div>
           </div>
           <div className="card-body space-y-4">
-            <button 
+            <button
               onClick={() => setShowPasswordModal(true)}
               className="w-full flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors duration-200"
             >
               <div className="flex items-center space-x-3">
                 <Lock className="w-5 h-5 text-gray-400" />
-                <span className="text-sm font-medium text-gray-900">Change Password</span>
+                <span className="text-sm font-medium text-gray-500">
+                  Change Password
+                </span>
               </div>
               <span className="text-sm text-gray-400">Update</span>
             </button>
-            
-            <button 
+
+            <button
               onClick={() => setShowLoginHistoryModal(true)}
               className="w-full flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors duration-200"
             >
               <div className="flex items-center space-x-3">
                 <Monitor className="w-5 h-5 text-gray-400" />
-                <span className="text-sm font-medium text-gray-900">Login History</span>
+                <span className="text-sm font-medium text-gray-500">
+                  Login History
+                </span>
               </div>
               <span className="text-sm text-gray-400">View</span>
             </button>
-            
+
             <button className="w-full flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors duration-200">
               <div className="flex items-center space-x-3">
                 <Shield className="w-5 h-5 text-gray-400" />
-                <span className="text-sm font-medium text-gray-900">Two-Factor Authentication</span>
+                <span className="text-sm font-medium text-gray-500">
+                  Two-Factor Authentication
+                </span>
               </div>
               <span className="text-sm text-success-600">Enabled</span>
             </button>
@@ -1096,41 +1216,63 @@ const Profile = () => {
                 <Bell className="w-5 h-5 text-yellow-600" />
               </div>
               <div>
-                <h3 className="text-lg font-semibold text-gray-900">Notifications</h3>
-                <p className="text-sm text-gray-600">Manage your notification preferences</p>
+                <h3 className="text-lg font-semibold text-gray-900">
+                  Notifications
+                </h3>
+                <p className="text-sm text-gray-600">
+                  Manage your notification preferences
+                </p>
               </div>
             </div>
           </div>
           <div className="card-body space-y-4">
             <div className="flex items-center justify-between py-2">
               <div>
-                <span className="text-sm font-medium text-gray-900">Email Notifications</span>
-                <p className="text-xs text-gray-600">Receive investment updates via email</p>
+                <span className="text-sm font-medium text-gray-500">
+                  Email Notifications
+                </span>
+                <p className="text-xs text-gray-600">
+                  Receive investment updates via email
+                </p>
               </div>
               <label className="relative inline-flex items-center cursor-pointer">
-                <input type="checkbox" className="sr-only peer" defaultChecked />
+                <input
+                  type="checkbox"
+                  className="sr-only peer"
+                  defaultChecked
+                />
                 <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-600"></div>
               </label>
             </div>
-            
+
             <div className="flex items-center justify-between py-2">
               <div>
-                <span className="text-sm font-medium text-gray-900">SMS Notifications</span>
-                <p className="text-xs text-gray-600">Receive alerts via SMS</p>
+                <span className="text-sm font-medium text-gray-500">
+                  SMS Notifications
+                </span>
+                <p className="text-xs text-gray-500">Receive alerts via SMS</p>
               </div>
               <label className="relative inline-flex items-center cursor-pointer">
                 <input type="checkbox" className="sr-only peer" />
                 <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-600"></div>
               </label>
             </div>
-            
+
             <div className="flex items-center justify-between py-2">
               <div>
-                <span className="text-sm font-medium text-gray-900">Push Notifications</span>
-                <p className="text-xs text-gray-600">Receive browser notifications</p>
+                <span className="text-sm font-medium text-gray-500">
+                  Push Notifications
+                </span>
+                <p className="text-xs text-gray-600">
+                  Receive browser notifications
+                </p>
               </div>
               <label className="relative inline-flex items-center cursor-pointer">
-                <input type="checkbox" className="sr-only peer" defaultChecked />
+                <input
+                  type="checkbox"
+                  className="sr-only peer"
+                  defaultChecked
+                />
                 <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-600"></div>
               </label>
             </div>
@@ -1151,16 +1293,24 @@ const Profile = () => {
               <Settings className="w-5 h-5 text-danger-600" />
             </div>
             <div>
-              <h3 className="text-lg font-semibold text-danger-900">Danger Zone</h3>
-              <p className="text-sm text-danger-600">Irreversible and destructive actions</p>
+              <h3 className="text-lg font-semibold text-danger-900">
+                Danger Zone
+              </h3>
+              <p className="text-sm text-danger-600">
+                Irreversible and destructive actions
+              </p>
             </div>
           </div>
         </div>
         <div className="card-body">
           <div className="flex items-center justify-between">
             <div>
-              <h4 className="text-sm font-medium text-gray-900">Delete Account</h4>
-              <p className="text-sm text-gray-600">Permanently delete your account and all data</p>
+              <h4 className="text-sm font-medium text-gray-900">
+                Delete Account
+              </h4>
+              <p className="text-sm text-gray-600">
+                Permanently delete your account and all data
+              </p>
             </div>
             <button className="btn-danger px-4 py-2 text-sm">
               Delete Account
@@ -1189,4 +1339,3 @@ const Profile = () => {
 };
 
 export default Profile;
-
