@@ -813,13 +813,13 @@ const Settings = () => {
 
                           <div>
                             <label className="form-label ">Email Address</label>
-                            <ClickToCopy
+                            <div
                               text={user?.email || ""}
                               className="form-input py-2 px-1 bg-gray-50 flex items-center"
                             >
                               <Mail className="w-4 h-4 text-gray-400 mr-3" />
                               <span>{user?.email || "Not provided"}</span>
-                            </ClickToCopy>
+                            </div>
                             <p className="text-xs text-gray-500 mt-1">
                               Email cannot be changed
                             </p>

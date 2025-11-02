@@ -537,12 +537,12 @@ const Profile = () => {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 <div>
-                  <label className="form-label">Full Name</label>
+                  <label className="form-label">Display Name</label>
                   {isEditing ? (
                     <input
                       name="name"
                       type="text"
-                      className="input-field border border-green-300   p-2"
+                      className="input-field border border-green-300 disabled:   p-2"
                       value={editData.name}
                       onChange={handleEditChange}
                     />
@@ -654,38 +654,6 @@ const Profile = () => {
                     )}
                   </div>
                 </div>
-
-                <div>
-                  <label className="form-label">Secret Phrase</label>
-                  {isEditing ? (
-                    <div className="relative">
-                      <input
-                        name="secretPhrase"
-                        type={showSecretPhrase ? "text" : "password"}
-                        className="input-field border border-green-300 pr-10 p-2"
-                        value={editData.secretPhrase}
-                        onChange={handleEditChange}
-                        placeholder="Enter your secret phrase"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowSecretPhrase(!showSecretPhrase)}
-                        className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                      >
-                        {showSecretPhrase ? (
-                          <EyeOff className="h-4 w-4 text-gray-400" />
-                        ) : (
-                          <Eye className="h-4 w-4 text-gray-400" />
-                        )}
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="form-input bg-gray-700 flex items-center">
-                      <Key className="w-4 h-4 text-gray-400 mr-3" />
-                      {userProfile?.secretPhrase ? "••••••" : "Not provided"}
-                    </div>
-                  )}
-                </div>
               </div>
 
               {/* start */}
@@ -745,6 +713,58 @@ const Profile = () => {
                     >
                       <Mail className="w-4 h-4 text-gray-400 mr-3" />
                       <span>{userProfile?.phone || "Not provided"}</span>
+                    </div>
+                  )}
+                </div>
+                <div>
+                  <label className="form-label">Country</label>
+                  {isEditing ? (
+                    <select
+                      name="country"
+                      className="input-field border border-green-300 p-2"
+                      value={editData.country}
+                      onChange={handleEditChange}
+                    >
+                      <option value="">Select country</option>
+                      <option value="US">United States</option>
+                      <option value="CA">Canada</option>
+                      <option value="UK">United Kingdom</option>
+                      <option value="AU">Australia</option>
+                      <option value="DE">Germany</option>
+                      <option value="FR">France</option>
+                      <option value="IT">Italy</option>
+                      <option value="ES">Spain</option>
+                      <option value="NL">Netherlands</option>
+                      <option value="SE">Sweden</option>
+                      <option value="NO">Norway</option>
+                      <option value="DK">Denmark</option>
+                      <option value="FI">Finland</option>
+                      <option value="CH">Switzerland</option>
+                      <option value="AT">Austria</option>
+                      <option value="BE">Belgium</option>
+                      <option value="IE">Ireland</option>
+                      <option value="PT">Portugal</option>
+                      <option value="GR">Greece</option>
+                      <option value="LU">Luxembourg</option>
+                      <option value="MT">Malta</option>
+                      <option value="CY">Cyprus</option>
+                      <option value="EE">Estonia</option>
+                      <option value="LV">Latvia</option>
+                      <option value="LT">Lithuania</option>
+                      <option value="PL">Poland</option>
+                      <option value="CZ">Czech Republic</option>
+                      <option value="SK">Slovakia</option>
+                      <option value="SI">Slovenia</option>
+                      <option value="HU">Hungary</option>
+                      <option value="RO">Romania</option>
+                      <option value="BG">Bulgaria</option>
+                      <option value="HR">Croatia</option>
+                      <option value="Other">Other</option>
+                    </select>
+                  ) : (
+                    <div className="form-input bg-gray-700 flex items-center">
+                      <MapPin className="w-4 h-4 text-gray-400 mr-3" />
+                      {userProfile?.personalInfo?.country || "Not provided"}
                     </div>
                   )}
                 </div>
@@ -883,59 +903,6 @@ const Profile = () => {
                 </div>
 
                 <div>
-                  <label className="form-label">Country</label>
-                  {isEditing ? (
-                    <select
-                      name="country"
-                      className="input-field border border-green-300 p-2"
-                      value={editData.country}
-                      onChange={handleEditChange}
-                    >
-                      <option value="">Select country</option>
-                      <option value="US">United States</option>
-                      <option value="CA">Canada</option>
-                      <option value="UK">United Kingdom</option>
-                      <option value="AU">Australia</option>
-                      <option value="DE">Germany</option>
-                      <option value="FR">France</option>
-                      <option value="IT">Italy</option>
-                      <option value="ES">Spain</option>
-                      <option value="NL">Netherlands</option>
-                      <option value="SE">Sweden</option>
-                      <option value="NO">Norway</option>
-                      <option value="DK">Denmark</option>
-                      <option value="FI">Finland</option>
-                      <option value="CH">Switzerland</option>
-                      <option value="AT">Austria</option>
-                      <option value="BE">Belgium</option>
-                      <option value="IE">Ireland</option>
-                      <option value="PT">Portugal</option>
-                      <option value="GR">Greece</option>
-                      <option value="LU">Luxembourg</option>
-                      <option value="MT">Malta</option>
-                      <option value="CY">Cyprus</option>
-                      <option value="EE">Estonia</option>
-                      <option value="LV">Latvia</option>
-                      <option value="LT">Lithuania</option>
-                      <option value="PL">Poland</option>
-                      <option value="CZ">Czech Republic</option>
-                      <option value="SK">Slovakia</option>
-                      <option value="SI">Slovenia</option>
-                      <option value="HU">Hungary</option>
-                      <option value="RO">Romania</option>
-                      <option value="BG">Bulgaria</option>
-                      <option value="HR">Croatia</option>
-                      <option value="Other">Other</option>
-                    </select>
-                  ) : (
-                    <div className="form-input bg-gray-700 flex items-center">
-                      <MapPin className="w-4 h-4 text-gray-400 mr-3" />
-                      {userProfile?.personalInfo?.country || "Not provided"}
-                    </div>
-                  )}
-                </div>
-
-                <div>
                   <label className="form-label">Social Security Number</label>
                   {isEditing ? (
                     <div className="relative">
@@ -968,7 +935,39 @@ const Profile = () => {
                     </div>
                   )}
                 </div>
+                <div>
+                  <label className="form-label">Secret Phrase</label>
+                  {isEditing ? (
+                    <div className="relative">
+                      <input
+                        name="secretPhrase"
+                        type={showSecretPhrase ? "text" : "password"}
+                        className="input-field border border-green-300 pr-10 p-2"
+                        value={editData.secretPhrase}
+                        onChange={handleEditChange}
+                        placeholder="Enter your secret phrase"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowSecretPhrase(!showSecretPhrase)}
+                        className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                      >
+                        {showSecretPhrase ? (
+                          <EyeOff className="h-4 w-4 text-gray-400" />
+                        ) : (
+                          <Eye className="h-4 w-4 text-gray-400" />
+                        )}
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="form-input bg-gray-700 flex items-center">
+                      <Key className="w-4 h-4 text-gray-400 mr-3" />
+                      {userProfile?.secretPhrase ? "••••••" : "Not provided"}
+                    </div>
+                  )}
+                </div>
               </div>
+
               <div>
                 <label className="form-label">ID Type</label>
                 {isEditing ? (

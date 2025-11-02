@@ -38,7 +38,7 @@ const ClickToCopy: React.FC<ClickToCopyProps> = ({
 
   return (
     <div
-      className={`inline-flex items-center space-x-2 cursor-pointer hover:bg-green-300 rounded px-2 py-1 transition-colors group ${className}`}
+      className={`inline-flex items-center space-x-2 cursor-pointer  rounded px-2 py-1 transition-colors group ${className}`}
       onClick={handleCopy}
       title="Click to copy"
     >
