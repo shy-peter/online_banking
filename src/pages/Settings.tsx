@@ -602,7 +602,7 @@ const Settings = () => {
           className="lg:col-span-3"
         >
           <div className="card">
-            <div className="card-body p-6">
+            <div className="card-body p-3 md:p-6">
               {/* Profile Settings */}
               {activeTab === "profile" && (
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -1468,7 +1468,7 @@ const Settings = () => {
                 <div className="space-y-6">
                   <div>
                     <div className="flex items-center justify-between mb-6">
-                      <h3 className="text-lg font-semibold text-gray-900">
+                      <h3 className=" text-base md:text-lg font-semibold text-gray-900">
                         Payment Methods
                       </h3>
                       <button
@@ -1484,9 +1484,9 @@ const Settings = () => {
                           });
                           setShowAddPaymentModal(true);
                         }}
-                        className="btn-primary px-4 py-2 text-sm"
+                        className="btn-primary px-4 py-2 text-sm md:text-base"
                       >
-                        <Plus className="w-4 h-4 mr-2" />
+                        <Plus className="w-4 h-4  md:mr-2 " />
                         Add Payment Method
                       </button>
                     </div>

@@ -46,10 +46,10 @@ const Message: React.FC<MessageProps> = ({ message, type, timestamp }) => {
         </div>
       </div>
       {isUser && (
-        <div className="w-8 h-8 rounded-full bg-primary-100 flex items-center justify-center ml-2">
+        <div className="w-8 h-8 mr-1  rounded-full bg-primary-100 flex items-center justify-center ml-2">
           <svg
             xmlns="http://www.w3.org/2000/svg"
-            className="h-5 w-5 text-primary-600"
+            className="h-5  w-5 text-primary-600"
             viewBox="0 0 20 20"
             fill="currentColor"
           >
@@ -110,7 +110,7 @@ const ChatWidget: React.FC = () => {
   return (
     <div
       className={` ${
-        isOpen ? "right-[10px] " : "right-4"
+        isOpen ? "right-[11px] " : "right-4"
       } fixed bottom-4   z-50`}
     >
       {!isOpen ? (
