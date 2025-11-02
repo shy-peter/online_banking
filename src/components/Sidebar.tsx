@@ -65,7 +65,7 @@ const Sidebar = () => {
   return (
     <>
       {!isDesktop && (
-        <div className="fixed top-4 left-4 z-50">
+        <div className="fixed top-10 left-4 z-50">
           <button
             onClick={() => setIsOpen(!isOpen)}
             className="p-2 bg-black  rounded-lg shadow-soft border border-[#d8ed36]"

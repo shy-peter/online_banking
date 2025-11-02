@@ -16,7 +16,7 @@ const Message: React.FC<MessageProps> = ({ message, type, timestamp }) => {
         <div className="w-8 h-8 rounded-full bg-primary-600 flex items-center justify-center text-white mr-2">
           <svg
             xmlns="http://www.w3.org/2000/svg"
-            className="h-5 w-5"
+            className="h-5 w-5 self-center  pl-[2px]"
             viewBox="0 0 20 20"
             fill="currentColor"
           >
@@ -108,7 +108,11 @@ const ChatWidget: React.FC = () => {
   };
 
   return (
-    <div className="fixed bottom-4 right-4 z-50">
+    <div
+      className={` ${
+        isOpen ? "right-[10px] " : "right-4"
+      } fixed bottom-4   z-50`}
+    >
       {!isOpen ? (
         <button
           onClick={toggleChat}
@@ -130,14 +134,16 @@ const ChatWidget: React.FC = () => {
           </svg>
         </button>
       ) : (
-        <div className="bg-white rounded-2xl shadow-soft-lg w-96 max-h-[600px] flex flex-col overflow-hidden transform transition-all duration-200">
+        <div
+          className={`bg-white rounded-2xl shadow-soft-lg w-[350px] md:w-96 max-h-[600px] flex flex-col overflow-hidden transform transition-all duration-200`}
+        >
           {/* Header */}
           <div className="bg-[#d8ed36] text-gray-800 p-4 flex justify-between items-center">
             <div className="flex items-center space-x-3">
               <div className="w-8 h-8 rounded-full bg-[#7f8e12] flex items-center justify-center">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
-                  className="h-5 w-5"
+                  className="h-5 w-5 pl-[2px]"
                   viewBox="0 0 20 20"
                   fill="currentColor"
                 >
@@ -190,9 +196,9 @@ const ChatWidget: React.FC = () => {
               {/* Input Area */}
               <form
                 onSubmit={handleSubmit}
-                className="border-t border-gray-100 p-4 bg-white"
+                className="border-t border-gray-100 p-2 md:p-4  bg-white"
               >
-                <div className="flex space-x-2">
+                <div className="flex gap-2 ">
                   <input
                     type="text"
                     value={inputMessage}
@@ -204,9 +210,9 @@ const ChatWidget: React.FC = () => {
                   <button
                     type="submit"
                     disabled={isSending}
-                    className="bg-[#cee331] text-black px-4 py-2 rounded-xl hover:bg-[#839117] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
+                    className="bg-[#cee331] text-black px-4 py-2 rounded-xl hover:bg-[#839117] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center "
                   >
-                    <span>Send</span>
+                    <span className="hidden md:block">Send</span>
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
                       className="h-4 w-4"
@@ -266,7 +272,7 @@ const ChatWidget: React.FC = () => {
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       required
-                      className="block w-full border border-gray-200 rounded-xl px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                      className="block w-full border input-field border-gray-200 rounded-xl px-4 py-2 focus:outline-none focus:ring-2  focus:border-transparent"
                       placeholder="your@email.com"
                     />
                   </div>
@@ -279,13 +285,13 @@ const ChatWidget: React.FC = () => {
                       value={phone}
                       onChange={(e) => setPhone(e.target.value)}
                       required
-                      className="block w-full border border-gray-200 rounded-xl px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                      className="block input-field form-input w-full border border-gray-200 rounded-xl px-4 py-2 focus:outline-none focus:ring-2  focus:border-transparent"
                       placeholder="Your phone number"
                     />
                   </div>
                   <button
                     type="submit"
-                    className="w-full bg-primary-600 text-white px-4 py-3 rounded-xl hover:bg-primary-700 transition-colors flex items-center justify-center space-x-2"
+                    className="w-full  btn-primary text-black px-4 py-[8px] md:py-3 rounded-xl  transition-colors flex items-center justify-center space-x-2"
                   >
                     <span>Start Chat</span>
                     <svg
