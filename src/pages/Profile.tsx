@@ -383,7 +383,7 @@ const Profile = () => {
                     <User className="w-5 h-5 text-primary-600" />
                   </div>
                   <div>
-                    <h3 className="text-lg font-semibold text-gray-900">
+                    <h3 className="text-lg font-semibold text-white/90">
                       Personal Information
                     </h3>
                     <p className="text-sm text-gray-600">
@@ -534,6 +534,7 @@ const Profile = () => {
               </div>
 
               {/* Form Fields */}
+
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 <div>
                   <label className="form-label">Full Name</label>
@@ -541,7 +542,7 @@ const Profile = () => {
                     <input
                       name="name"
                       type="text"
-                      className="input-field  border-red-500 p-2"
+                      className="input-field border border-green-300   p-2"
                       value={editData.name}
                       onChange={handleEditChange}
                     />
@@ -554,39 +555,51 @@ const Profile = () => {
                 </div>
 
                 <div>
-                  <label className="form-label">Phone Number</label>
-                  {isEditing ? (
-                    <input
-                      name="phone"
-                      type="tel"
-                      className="input-field p-2"
-                      value={editData.phone}
-                      onChange={handleEditChange}
-                      placeholder="Enter your phone number"
-                    />
-                  ) : (
-                    <ClickToCopy
-                      text={userProfile?.phone || ""}
-                      className="form-input bg-gray-700 flex items-center"
-                    >
-                      <Mail className="w-4 h-4 text-gray-400 mr-3" />
-                      <span>{userProfile?.phone || "Not provided"}</span>
-                    </ClickToCopy>
-                  )}
-                </div>
-
-                <div>
                   <label className="form-label">Email Address</label>
-                  <ClickToCopy
+                  <div
                     text={user?.email || ""}
                     className="form-input bg-gray-700  flex items-center"
                   >
                     <Mail className="w-4 h-4  text-gray-400 mr-3" />
                     <span>{user?.email || "Not provided"}</span>
-                  </ClickToCopy>
+                  </div>
                   <p className="text-xs  text-red-500 mt-1 ">
                     Email cannot be changed
                   </p>
+                </div>
+                {/* Email Verification Status */}
+                <div>
+                  <label className="form-label">Email Verification</label>
+                  <div className="form-input bg-gray-700 flex items-center justify-between">
+                    <div className="flex items-center">
+                      <Mail className="w-4 h-4 text-gray-400 mr-3" />
+                      <span className="text-sm">
+                        {userProfile?.isVerified ? (
+                          <VerificationBadge
+                            status={getVerificationStatus(userProfile)}
+                            size="xs"
+                          />
+                        ) : (
+                          "Pending Verification"
+                        )}
+                      </span>
+                    </div>
+                    {!userProfile?.isVerified && (
+                      <button
+                        onClick={handleResendVerificationEmail}
+                        disabled={isResendingEmail}
+                        className="text-primary-600 hover:text-primary-700 text-sm disabled:opacity-50"
+                      >
+                        {isResendingEmail ? "Sending..." : "Resend Email"}
+                      </button>
+                    )}
+                  </div>
+                  {!userProfile?.isVerified && (
+                    <p className="text-xs text-gray-500 mt-1">
+                      Please check your email and click the verification link to
+                      activate your account.
+                    </p>
+                  )}
                 </div>
 
                 <div>
@@ -642,35 +655,6 @@ const Profile = () => {
                   </div>
                 </div>
 
-                {/* Email Verification Status */}
-                <div>
-                  <label className="form-label">Email Verification</label>
-                  <div className="form-input bg-gray-700 flex items-center justify-between">
-                    <div className="flex items-center">
-                      <Mail className="w-4 h-4 text-gray-400 mr-3" />
-                      <span className="text-sm">
-                        {userProfile?.isVerified
-                          ? "Verified"
-                          : "Pending Verification"}
-                      </span>
-                    </div>
-                    {!userProfile?.isVerified && (
-                      <button
-                        onClick={handleResendVerificationEmail}
-                        disabled={isResendingEmail}
-                        className="text-primary-600 hover:text-primary-700 text-sm disabled:opacity-50"
-                      >
-                        {isResendingEmail ? "Sending..." : "Resend Email"}
-                      </button>
-                    )}
-                  </div>
-                  {!userProfile?.isVerified && (
-                    <p className="text-xs text-gray-500 mt-1">
-                      Please check your email and click the verification link to
-                      activate your account.
-                    </p>
-                  )}
-                </div>
                 <div>
                   <label className="form-label">Secret Phrase</label>
                   {isEditing ? (
@@ -678,7 +662,7 @@ const Profile = () => {
                       <input
                         name="secretPhrase"
                         type={showSecretPhrase ? "text" : "password"}
-                        className="input-field pr-10 p-2"
+                        className="input-field border border-green-300 pr-10 p-2"
                         value={editData.secretPhrase}
                         onChange={handleEditChange}
                         placeholder="Enter your secret phrase"
@@ -704,7 +688,7 @@ const Profile = () => {
                 </div>
               </div>
 
-              {/* Additional Personal Information */}
+              {/* start */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 <div>
                   <label className="form-label">First Name</label>
@@ -712,7 +696,7 @@ const Profile = () => {
                     <input
                       name="firstName"
                       type="text"
-                      className="input-field p-2"
+                      className="input-field border border-green-300  p-2"
                       value={editData.firstName}
                       onChange={handleEditChange}
                       placeholder="Enter your first name"
@@ -731,7 +715,7 @@ const Profile = () => {
                     <input
                       name="lastName"
                       type="text"
-                      className="input-field p-2"
+                      className="input-field border border-green-300  p-2"
                       value={editData.lastName}
                       onChange={handleEditChange}
                       placeholder="Enter your last name"
@@ -743,20 +727,40 @@ const Profile = () => {
                     </div>
                   )}
                 </div>
-
+                <div>
+                  <label className="form-label">Phone Number</label>
+                  {isEditing ? (
+                    <input
+                      name="phone"
+                      type="tel"
+                      className="input-field border border-green-300  p-2"
+                      value={editData.phone}
+                      onChange={handleEditChange}
+                      placeholder="Enter your phone number"
+                    />
+                  ) : (
+                    <div
+                      text={userProfile?.phone || ""}
+                      className="form-input bg-gray-700 flex items-center"
+                    >
+                      <Mail className="w-4 h-4 text-gray-400 mr-3" />
+                      <span>{userProfile?.phone || "Not provided"}</span>
+                    </div>
+                  )}
+                </div>
                 <div>
                   <label className="form-label">Date of Birth</label>
                   {isEditing ? (
                     <input
                       name="dateOfBirth"
                       type="date"
-                      className="input-field p-2"
+                      className="input-field border border-green-300 p-2"
                       value={editData.dateOfBirth}
                       onChange={handleEditChange}
                     />
                   ) : (
                     <div className="form-input bg-gray-700 flex items-center">
-                      <Calendar className="w-4 h-4 text-gray-400 mr-3" />
+                      <Calendar className="w-4 h-4 text-white mr-3" />
                       {userProfile?.personalInfo?.dateOfBirth || "Not provided"}
                     </div>
                   )}
@@ -768,7 +772,7 @@ const Profile = () => {
                     <input
                       name="occupation"
                       type="text"
-                      className="input-field p-2"
+                      className="input-field border border-green-300 p-2"
                       value={editData.occupation}
                       onChange={handleEditChange}
                       placeholder="Enter your occupation"
@@ -787,7 +791,7 @@ const Profile = () => {
                     <input
                       name="annualIncome"
                       type="number"
-                      className="input-field p-2"
+                      className="input-field border border-green-300 p-2"
                       value={editData.annualIncome}
                       onChange={handleEditChange}
                       placeholder="Enter your annual income"
@@ -808,7 +812,7 @@ const Profile = () => {
                     <input
                       name="address"
                       type="text"
-                      className="input-field p-2"
+                      className="input-field border border-green-300 p-2"
                       value={editData.address}
                       onChange={handleEditChange}
                       placeholder="Enter your address"
@@ -827,7 +831,7 @@ const Profile = () => {
                     <input
                       name="city"
                       type="text"
-                      className="input-field p-2"
+                      className="input-field border border-green-300 p-2"
                       value={editData.city}
                       onChange={handleEditChange}
                       placeholder="Enter your city"
@@ -846,7 +850,7 @@ const Profile = () => {
                     <input
                       name="state"
                       type="text"
-                      className="input-field p-2"
+                      className="input-field border border-green-300 p-2"
                       value={editData.state}
                       onChange={handleEditChange}
                       placeholder="Enter your state"
@@ -865,7 +869,7 @@ const Profile = () => {
                     <input
                       name="zipCode"
                       type="text"
-                      className="input-field p-2"
+                      className="input-field border border-green-300 p-2"
                       value={editData.zipCode}
                       onChange={handleEditChange}
                       placeholder="Enter your ZIP code"
@@ -883,7 +887,7 @@ const Profile = () => {
                   {isEditing ? (
                     <select
                       name="country"
-                      className="input-field p-2"
+                      className="input-field border border-green-300 p-2"
                       value={editData.country}
                       onChange={handleEditChange}
                     >
@@ -938,7 +942,7 @@ const Profile = () => {
                       <input
                         name="ssn"
                         type={showSSN ? "text" : "password"}
-                        className="input-field pr-10 p-2"
+                        className="input-field border border-green-300 pr-10 p-2"
                         value={editData.ssn}
                         onChange={handleEditChange}
                         placeholder="XXX-XX-XXXX"
@@ -964,30 +968,34 @@ const Profile = () => {
                     </div>
                   )}
                 </div>
+              </div>
+              <div>
+                <label className="form-label">ID Type</label>
+                {isEditing ? (
+                  <select
+                    name="idType"
+                    className="input-field border border-green-300 p-2"
+                    value={editData.idType}
+                    onChange={handleEditChange}
+                  >
+                    <option value="">Select ID type</option>
+                    <option value="drivers-license">Driver's License</option>
+                    <option value="passport">Passport</option>
+                    <option value="state-id">State ID</option>
+                    <option value="national-id">National ID</option>
+                  </select>
+                ) : (
+                  <div className="form-input bg-gray-700 flex items-center">
+                    <FileText className="w-4 h-4 text-gray-400 mr-3" />
+                    {userProfile?.personalInfo?.idType || "Not provided"}
+                  </div>
+                )}
+              </div>
 
-                <div>
-                  <label className="form-label">ID Type</label>
-                  {isEditing ? (
-                    <select
-                      name="idType"
-                      className="input-field p-2"
-                      value={editData.idType}
-                      onChange={handleEditChange}
-                    >
-                      <option value="">Select ID type</option>
-                      <option value="drivers-license">Driver's License</option>
-                      <option value="passport">Passport</option>
-                      <option value="state-id">State ID</option>
-                      <option value="national-id">National ID</option>
-                    </select>
-                  ) : (
-                    <div className="form-input bg-gray-700 flex items-center">
-                      <FileText className="w-4 h-4 text-gray-400 mr-3" />
-                      {userProfile?.personalInfo?.idType || "Not provided"}
-                    </div>
-                  )}
-                </div>
+              {/* end */}
 
+              {/* Additional Personal Information */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Document Upload Section */}
                 {isEditing && editData.idType && (
                   <div className="col-span-2">

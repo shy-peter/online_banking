@@ -229,7 +229,7 @@ const ChatWidget: React.FC = () => {
             <div className="p-6 bg-gray-50">
               {user ? (
                 <div className="text-center">
-                  <h4 className="text-lg font-semibold text-gray-900 mb-2">
+                  <h4 className="text-lg font-semibold text-black/60 mb-2">
                     Start a Conversation
                   </h4>
                   <p className="text-gray-600 mb-4">

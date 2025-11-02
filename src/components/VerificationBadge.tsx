@@ -15,6 +15,7 @@ const VerificationBadge: React.FC<VerificationBadgeProps> = ({
   showText = true,
   className = "",
   res = "px-3",
+  
 }) => {
   const getStatusConfig = () => {
     switch (status) {
