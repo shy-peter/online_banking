@@ -1256,7 +1256,7 @@ const Settings = () => {
                                 {userPlan.interestRate}%
                               </div>
                               <p className="text-sm text-gray-600">
-                                Annual Interest Rate
+                                Monthly Interest Rate
                               </p>
                             </div>
                             <div className="space-y-3">

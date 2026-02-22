@@ -33,73 +33,43 @@ export const COLLECTIONS = {
 // Investment plans configuration
 export const INVESTMENT_PLANS: InvestmentPlan[] = [
   {
-    id: 'starter',
-    name: 'Starter Plan',
-    minAmount: 100,
-    maxAmount: 4999,
-    interestRate: 15,
-    description: 'Perfect for beginners looking to start their investment journey',
-    features: ['15% Annual Interest', 'Multiple Payment Methods', 'Monthly Payouts'],
+    id: 'basic',
+    name: 'Basic Plan',
+    minAmount: 50,
+    maxAmount: 1000,
+    interestRate: 2, // 2% per month
+    description: 'Entry‑level plan with a low minimum deposit',
+    features: ['2% Monthly Interest', 'Multiple Payment Methods'],
     paymentMethods: ['venmo', 'cashapp', 'paypal', 'crypto']
   },
   {
-    id: 'growth',
-    name: 'Growth Plan',
+    id: 'silver',
+    name: 'Silver Plan',
+    minAmount: 1000,
+    maxAmount: 5000,
+    interestRate: 5, // 5% per month
+    description: 'Designed for medium‑sized deposits with enhanced returns',
+    features: ['5% Monthly Interest', 'Priority Support'],
+    paymentMethods: ['venmo', 'cashapp', 'paypal', 'crypto']
+  },
+  {
+    id: 'gold',
+    name: 'Gold Plan',
     minAmount: 5000,
-    maxAmount: 9999,
-    interestRate: 15,
-    description: 'Accelerate your wealth building with higher returns',
-    features: ['15% Annual Interest', 'Priority Support', 'Monthly Payouts'],
-    paymentMethods: ['venmo', 'cashapp', 'paypal', 'crypto']
-  },
-  {
-    id: 'premium',
-    name: 'Premium Plan',
-    minAmount: 10000,
-    maxAmount: 49999,
-    interestRate: 20,
-    description: 'Enhanced returns for serious investors',
-    features: ['20% Annual Interest', 'Premium Support', 'Weekly Payouts'],
-    paymentMethods: ['venmo', 'cashapp', 'paypal', 'crypto']
-  },
-  {
-    id: 'elite',
-    name: 'Elite Plan',
-    minAmount: 50000,
-    maxAmount: 99999,
-    interestRate: 30,
-    description: 'Maximum returns for elite investors',
-    features: ['30% Annual Interest', 'Dedicated Manager', 'Weekly Payouts'],
+    maxAmount: 30000,
+    interestRate: 8, // 8% per month
+    description: 'High‑value plan offering the best monthly rates',
+    features: ['8% Monthly Interest', 'Premium Support'],
     paymentMethods: ['venmo', 'cashapp', 'paypal', 'crypto']
   },
   {
     id: 'platinum',
     name: 'Platinum Plan',
-    minAmount: 100000,
-    maxAmount: 499999,
-    interestRate: 40,
-    description: 'Exclusive benefits for platinum investors',
-    features: ['40% Annual Interest', 'VIP Support', 'Daily Payouts'],
-    paymentMethods: ['crypto']
-  },
-  {
-    id: 'diamond',
-    name: 'Diamond Plan',
-    minAmount: 500000,
-    maxAmount: 999999,
-    interestRate: 55,
-    description: 'Ultra-premium returns for diamond tier',
-    features: ['55% Annual Interest', 'Personal Advisor', 'Daily Payouts'],
-    paymentMethods: ['crypto']
-  },
-  {
-    id: 'ultimate',
-    name: 'Ultimate Plan',
-    minAmount: 1000000,
+    minAmount: 30001,
     maxAmount: null,
-    interestRate: 70,
-    description: 'The ultimate investment experience',
-    features: ['70% Annual Interest', 'Private Banking', 'Real-time Payouts'],
+    interestRate: 10, // 10% per month for deposits above $30k
+    description: 'Top tier plan for very large deposits',
+    features: ['10% Monthly Interest', 'Dedicated Support'],
     paymentMethods: ['crypto']
   }
 ];
@@ -111,8 +81,10 @@ export const getInvestmentPlan = (amount: number): InvestmentPlan | undefined =>
   );
 };
 
-export const calculateMonthlyInterest = (principal: number, annualRate: number): number => {
-  return (principal * (annualRate / 100)) / 12;
+// now interprets `interestRate` as a monthly percentage instead of annual
+export const calculateMonthlyInterest = (principal: number, monthlyRate: number): number => {
+  // monthly rate already expressed as percentage; convert to decimal
+  return principal * (monthlyRate / 100);
 };
 
 export const formatCurrency = (amount: number): string => {

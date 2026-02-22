@@ -309,7 +309,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   const login = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
-    setLoading(true);
+    // Don't set loading here - let the login button handle its own spinner
+    // Only set loading after successful authentication to show skeleton while data loads
     try {
       console.log('Attempting login for email:', email);
       await clearExistingSession();
@@ -353,6 +354,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
       
       // If account is active and verified, proceed with normal login
+      // Now set loading to true to show skeleton while data loads
+      setLoading(true);
       await checkUser();
       toast.success('Successfully logged in!');
       return { success: true };
@@ -361,9 +364,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const errorMessage = error.message || 'Login failed';
       toast.error(errorMessage);
       return { success: false, error: errorMessage };
-    } finally {
-      setLoading(false);
     }
+    // Note: Don't set loading to false here - checkUser() will handle it
   };
 
   const register = async (email: string, password: string, name: string): Promise<{ success: boolean; error?: string }> => {

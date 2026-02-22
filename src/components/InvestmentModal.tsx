@@ -45,7 +45,8 @@ const InvestmentModal: React.FC<InvestmentModalProps> = ({ isOpen, onClose }) =>
   useEffect(() => {
     if (formData.amount) {
       const amount = parseFloat(formData.amount);
-      if (amount >= 100) {
+      // basic plan now starts at $50
+      if (amount >= 50) {
         const plan = getInvestmentPlan(amount);
         setSelectedPlan(plan);
         // Reset payment method if it's not available for the new amount
@@ -319,13 +320,13 @@ const InvestmentModal: React.FC<InvestmentModalProps> = ({ isOpen, onClose }) =>
                 <div>
                   <span className="text-primary-600 font-medium">Monthly Income:</span>
                   <div className="text-primary-900 font-semibold">
-                    {formData.amount ? formatCurrency((parseFloat(formData.amount) * (selectedPlan.interestRate / 100)) / 12 * 100) : '$0.00'}
+                    {formData.amount ? formatCurrency(parseFloat(formData.amount) * (selectedPlan.interestRate / 100) * 100) : '$0.00'}
                   </div>
                 </div>
                 <div>
                   <span className="text-primary-600 font-medium">Yearly Income:</span>
                   <div className="text-primary-900 font-semibold">
-                    {formData.amount ? formatCurrency(parseFloat(formData.amount) * (selectedPlan.interestRate / 100) * 100) : '$0.00'}
+                    {formData.amount ? formatCurrency(parseFloat(formData.amount) * (selectedPlan.interestRate / 100) * 100 * 12) : '$0.00'}
                   </div>
                 </div>
               </div>
@@ -528,8 +529,8 @@ const InvestmentModal: React.FC<InvestmentModalProps> = ({ isOpen, onClose }) =>
                     <li>Investments are subject to terms and conditions</li>
                     <li>Returns are calculated monthly and compounded</li>
                     <li>Processing time may vary by payment method</li>
-                    {parseFloat(formData.amount) >= 100000 && (
-                      <li>Amounts $100k+ require cryptocurrency payment</li>
+                    {parseFloat(formData.amount) > 30000 && (
+                      <li>Amounts above $30k require cryptocurrency payment</li>
                     )}
                   </ul>
                 </div>

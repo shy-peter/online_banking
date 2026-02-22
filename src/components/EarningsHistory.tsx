@@ -90,11 +90,63 @@ const EarningsHistory: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="card">
-        <div className="card-body p-6">
-          <div className="flex items-center justify-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
-            <span className="ml-3 text-gray-600">Loading earnings history...</span>
+      <div className="space-y-6">
+        {/* Stats Cards Skeleton */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="card">
+              <div className="card-body p-6">
+                <div className="flex items-center justify-between">
+                  <div className="flex-1">
+                    <div className="animate-pulse bg-gray-700 h-4 w-24 rounded mb-2"></div>
+                    <div className="animate-pulse bg-gray-700 h-8 w-32 rounded mt-2"></div>
+                  </div>
+                  <div className="animate-pulse bg-gray-700 h-12 w-12 rounded-lg"></div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Filters Skeleton */}
+        <div className="card">
+          <div className="card-body p-6">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div className="animate-pulse bg-gray-700 h-10 w-full max-w-md rounded"></div>
+              <div className="flex gap-4">
+                <div className="animate-pulse bg-gray-700 h-10 w-32 rounded"></div>
+                <div className="animate-pulse bg-gray-700 h-10 w-32 rounded"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Earnings List Skeleton */}
+        <div className="card">
+          <div className="card-header">
+            <div className="animate-pulse bg-gray-700 h-6 w-40 rounded mb-2"></div>
+            <div className="animate-pulse bg-gray-700 h-4 w-32 rounded"></div>
+          </div>
+          <div className="card-body p-0">
+            <div className="divide-y divide-gray-700">
+              {[1, 2, 3, 4, 5].map((i) => (
+                <div key={i} className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-4">
+                      <div className="animate-pulse bg-gray-700 h-10 w-10 rounded-lg"></div>
+                      <div>
+                        <div className="animate-pulse bg-gray-700 h-5 w-32 rounded mb-2"></div>
+                        <div className="animate-pulse bg-gray-700 h-4 w-48 rounded"></div>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="animate-pulse bg-gray-700 h-6 w-24 rounded mb-2"></div>
+                      <div className="animate-pulse bg-gray-700 h-4 w-16 rounded"></div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </div>

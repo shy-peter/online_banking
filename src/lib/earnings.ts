@@ -32,8 +32,8 @@ export interface EarningsAdjustment {
 export const calculateDailyEarnings = (investment: Investment): number => {
   if (investment.status !== 'active') return 0;
   
-  // Convert annual interest rate to daily rate
-  const dailyRate = investment.interestRate / (100 * 365);
+  // interestRate stored as monthly percentage; convert to daily assuming 30‑day month
+  const dailyRate = investment.interestRate / (100 * 30);
   return Math.round(investment.amount * dailyRate);
 };
 

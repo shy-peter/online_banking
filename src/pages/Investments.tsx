@@ -75,7 +75,8 @@ const Investments: React.FC = () => {
     const returns = [];
     const startDate = new Date(investment.$createdAt);
     const today = new Date();
-    const dailyRate = investment.interestRate / (100 * 365); // Convert annual to daily
+    // interestRate is now a monthly percentage; approximate daily rate assuming 30‑day month
+    const dailyRate = investment.interestRate / (100 * 30); // monthly -> daily
     
     for (let d = new Date(startDate); d <= today; d.setDate(d.getDate() + 1)) {
       const dayReturns = investment.amount * dailyRate;
@@ -343,7 +344,7 @@ const Investments: React.FC = () => {
                             </span>
                             <span className="hidden sm:inline text-xs text-gray-400">•</span>
                             <span className="text-sm font-medium text-primary-600">
-                              {investment.interestRate}% APY
+                              {investment.interestRate}% monthly rate
                             </span>
                             <span className="hidden sm:inline text-xs text-gray-400">•</span>
                             <span className="text-sm text-gray-600 capitalize">
