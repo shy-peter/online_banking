@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { account, databases, storage, DATABASE_ID, COLLECTIONS, generateAccountNumber, getInvestmentPlan, formatCurrency } from '../lib/appwrite';
 import { referralService } from '../lib/referralService';
+import { userService } from '../lib/userService';
 import { ID, Query } from 'appwrite';
 import toast from 'react-hot-toast';
 import type { User, UserProfile, Investment, Transaction, AuthContextType, LoginSession, PaymentMethod, BonusCode, Transfer } from '../types/appwrite';

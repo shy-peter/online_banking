@@ -80,7 +80,8 @@ const EnhancedSignup = () => {
   const steps = [
     { id: 1, title: 'Basic Information', description: 'Your account details' },
     { id: 2, title: 'Personal Information', description: 'Additional details' },
-    { id: 3, title: 'Security Setup', description: 'Set up your secret phrase' }
+    { id: 3, title: 'Documents', description: 'Upload required documents' },
+    { id: 4, title: 'Security Setup', description: 'Set up your secret phrase' }
   ];
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -137,6 +138,9 @@ const EnhancedSignup = () => {
         }
         break;
       case 3:
+        // Documents step - optional, just continue
+        break;
+      case 4:
         if (!formData.secretPhrase) {
           setError('Please set up your secret phrase');
           return false;
@@ -167,7 +171,7 @@ const EnhancedSignup = () => {
       e.preventDefault();
     }
     
-    if (!validateStep(3)) return;
+    if (!validateStep(4)) return;
     
     setIsLoading(true);
     setError('');
@@ -197,7 +201,7 @@ const EnhancedSignup = () => {
       );
       
       if (result.success) {
-        navigate('/verify-email');
+        navigate(`/registration-complete?email=${encodeURIComponent(formData.email)}`);
       } else {
         setError(result.error || 'Signup failed. Please check your information and try again.');
       }
@@ -223,7 +227,7 @@ const EnhancedSignup = () => {
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                     <User className="h-5 w-5 text-gray-400" />
                   </div>
-                  <input
+                  <input 
                     id="firstName"
                     name="firstName"
                     type="text"
@@ -562,6 +566,33 @@ const EnhancedSignup = () => {
         );
 
       case 3:
+        return (
+          <div className="space-y-6">
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <div className="flex items-start space-x-3">
+                <AlertCircle className="w-5 h-5 text-blue-600 mt-0.5" />
+                <div>
+                  <h4 className="text-sm font-medium text-blue-800">Document Upload</h4>
+                  <p className="text-sm text-blue-700 mt-1">
+                    Please upload required documents to verify your identity. This helps us comply with regulations and keep your account secure.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="text-center py-8">
+              <div className="w-16 h-16 bg-primary-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <AlertCircle className="w-8 h-8 text-primary-600" />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Documents Optional</h3>
+              <p className="text-gray-600 mb-6">
+                You can upload documents now or skip and complete this step later in your profile.
+              </p>
+            </div>
+          </div>
+        );
+
+      case 4:
         return (
           <div className="space-y-6">
             <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">

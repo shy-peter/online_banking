@@ -88,7 +88,7 @@ const Sidebar = () => {
       </AnimatePresence>
 
       {isDesktop ? (
-        <div className="w-64 bg-black border-r border-gray-800 h-screen">
+        <div className="fixed left-0 top-0 w-64 bg-black border-r border-gray-800 h-screen overflow-y-auto z-30">
           <div className="flex flex-col h-full">
             <div className="flex items-center px-6 py-6 border-b border-gray-800">
               <div className="flex items-center space-x-3">

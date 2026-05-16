@@ -23,7 +23,7 @@ const Header = () => {
       initial={{ opacity: 0, y: -20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6 }}
-      className="bg-black border-b border-gray-800 px-3 md:px-6 py-2 md:py-4"
+      className="fixed top-0 right-0 left-0 lg:left-64 bg-black border-b border-gray-800 px-3 md:px-6 py-2 md:py-4 z-20"
     >
       <div className="flex items-center justify-between">
         {/* Welcome message */}

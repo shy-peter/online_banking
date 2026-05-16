@@ -14,6 +14,7 @@ import ChatWidget from "./components/ChatWidget";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import EnhancedSignup from "./pages/EnhancedSignup";
+import RegistrationComplete from "./pages/RegistrationComplete";
 import Dashboard from "./pages/Dashboard";
 import Investments from "./pages/Investments";
 import Transactions from "./pages/Transactions";
@@ -76,6 +77,7 @@ const App: React.FC = () => {
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<EnhancedSignup />} />
                 <Route path="/signup" element={<EnhancedSignup />} />
+                <Route path="/registration-complete" element={<RegistrationComplete />} />
                 <Route path="/security" element={<SecurityCenter />} />
                 <Route path="/verify-email" element={<VerifyEmail />} />
                 <Route path="/reset-password" element={<ResetPassword />} />
