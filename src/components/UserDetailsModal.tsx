@@ -13,6 +13,7 @@ import {
   Hash,
   CreditCard,
   TrendingUp,
+  TrendingDown,
   Clock,
   CheckCircle,
   XCircle,
@@ -29,9 +30,10 @@ import {
   Ban,
   Trash2,
   UserCheck,
-  RefreshCw
+  RefreshCw,
+  BarChart3
 } from 'lucide-react';
-import { formatCurrency } from '../lib/appwrite';
+import { formatCurrency, calculateMonthlyInterest, getInvestmentPlan } from '../lib/appwrite';
 import type { UserProfile, Transaction, Investment, PaymentMethod } from '../types/appwrite';
 
 interface UserDetailsModalProps {
@@ -77,7 +79,7 @@ const UserDetailsModal: React.FC<UserDetailsModalProps> = ({
 }) => {
   const [showSSN, setShowSSN] = React.useState(false);
   const [showSecretPhrase, setShowSecretPhrase] = React.useState(false);
-  const [activeTab, setActiveTab] = React.useState<'overview' | 'pending' | 'adjustments' | 'account-actions'>('overview');
+  const [activeTab, setActiveTab] = React.useState<'overview' | 'pending' | 'adjustments' | 'account-actions' | 'transactions'>('overview');
   const [adjustmentAmount, setAdjustmentAmount] = React.useState('');
   const [adjustmentType, setAdjustmentType] = React.useState<'increase' | 'decrease'>('increase');
   const [adjustmentCategory, setAdjustmentCategory] = React.useState<'total_earnings' | 'available_balance' | 'withdrawal'>('total_earnings');
@@ -467,7 +469,8 @@ const UserDetailsModal: React.FC<UserDetailsModalProps> = ({
                   { id: 'overview', name: 'Overview', icon: User },
                   { id: 'pending', name: 'Pending Items', icon: Clock, badge: totalPendingItems },
                   { id: 'adjustments', name: 'Adjustments', icon: Settings },
-                  { id: 'account-actions', name: 'Account Actions', icon: Shield }
+                  { id: 'account-actions', name: 'Account Actions', icon: Shield },
+                  { id: 'transactions', name: 'Transactions', icon: BarChart3 }
                 ].map((tab) => {
                   const Icon = tab.icon;
                   const isActive = activeTab === tab.id;
@@ -1364,6 +1367,179 @@ const UserDetailsModal: React.FC<UserDetailsModalProps> = ({
                   <Shield className="w-16 h-16 text-gray-400 mx-auto mb-4" />
                   <h3 className="text-lg font-medium text-gray-900 mb-2">Access Restricted</h3>
                   <p className="text-gray-600">Only administrators can access account management controls.</p>
+                </div>
+              )}
+
+              {activeTab === 'transactions' && (
+                <div className="space-y-6">
+                  {/* Investments Section */}
+                  {investments.length > 0 && (
+                    <div>
+                      <h3 className="text-lg font-semibold text-gray-900 mb-4">Active Investments</h3>
+                      <div className="space-y-4">
+                        {investments.map((investment, index) => {
+                          const plan = getInvestmentPlan(investment.amount);
+                          const monthlyEarnings = calculateMonthlyInterest(investment.amount, investment.interestRate);
+                          const investmentEarnings = transactions
+                            .filter(t => 
+                              t.investmentId === investment.$id && 
+                              t.type === 'earning' && 
+                              t.status === 'completed'
+                            )
+                            .reduce((sum, t) => sum + t.amount, 0);
+                          const roi = investment.amount > 0 ? ((investmentEarnings / investment.amount) * 100).toFixed(1) : 0;
+
+                          return (
+                            <motion.div
+                              key={investment.$id || index}
+                              initial={{ opacity: 0, y: 10 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              transition={{ duration: 0.3, delay: index * 0.1 }}
+                              className="bg-white border border-gray-200 rounded-lg p-4 sm:p-6 hover:shadow-md transition-shadow"
+                            >
+                              <div className="flex items-start justify-between mb-4">
+                                <div>
+                                  <h4 className="text-xl font-semibold text-gray-900">
+                                    {formatCurrency(investment.amount)}
+                                  </h4>
+                                  <div className="flex flex-wrap items-center gap-2 mt-2 text-sm">
+                                    <span className="text-gray-600">{plan?.name || 'Investment Plan'}</span>
+                                    <span className="text-gray-400">•</span>
+                                    <span className="text-primary-600 font-medium">{investment.interestRate}% monthly rate</span>
+                                    <span className="text-gray-400">•</span>
+                                    <span className="text-gray-600 capitalize">{investment.status}</span>
+                                  </div>
+                                </div>
+                                <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                                  investment.status === 'active' ? 'bg-green-100 text-green-800' :
+                                  investment.status === 'pending' ? 'bg-amber-100 text-amber-800' :
+                                  'bg-gray-100 text-gray-800'
+                                }`}>
+                                  {investment.status}
+                                </span>
+                              </div>
+
+                              <div className="text-sm text-gray-600 mb-4">
+                                Started: {new Date(investment.$createdAt).toLocaleDateString('en-US')} at {new Date(investment.$createdAt).toLocaleTimeString('en-US', { 
+                                  hour: '2-digit', 
+                                  minute: '2-digit',
+                                  hour12: true 
+                                })}
+                              </div>
+
+                              {investment.status === 'active' && (
+                                <div className="mt-4 pt-4 border-t border-gray-200">
+                                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                                    <div>
+                                      <p className="text-xs text-gray-500 mb-1">Total Earned</p>
+                                      <p className="text-sm font-semibold text-green-600">
+                                        {formatCurrency(investmentEarnings)}
+                                      </p>
+                                    </div>
+                                    <div>
+                                      <p className="text-xs text-gray-500 mb-1">Monthly Income</p>
+                                      <p className="text-sm font-semibold text-blue-600">
+                                        {formatCurrency(monthlyEarnings)}
+                                      </p>
+                                    </div>
+                                    <div>
+                                      <p className="text-xs text-gray-500 mb-1">ROI</p>
+                                      <p className="text-sm font-semibold text-gray-900">
+                                        {roi}%
+                                      </p>
+                                    </div>
+                                    <div>
+                                      <p className="text-xs text-gray-500 mb-1">Total Value</p>
+                                      <p className="text-sm font-semibold text-gray-900">
+                                        {formatCurrency(investment.amount + investmentEarnings)}
+                                      </p>
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
+                            </motion.div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Transactions Section */}
+                  {transactions.length > 0 && (
+                    <div>
+                      <h3 className="text-lg font-semibold text-gray-900 mb-4">Transaction History</h3>
+                      <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+                        <div className="divide-y divide-gray-200">
+                          {transactions.map((transaction, index) => (
+                            <motion.div
+                              key={transaction.$id || index}
+                              initial={{ opacity: 0, y: 10 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              transition={{ duration: 0.3, delay: index * 0.05 }}
+                              className="p-4 hover:bg-gray-50 transition-colors"
+                            >
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center space-x-4">
+                                  <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${
+                                    transaction.type === 'earning' ? 'bg-green-100' :
+                                    transaction.type === 'withdrawal' ? 'bg-red-100' :
+                                    transaction.type === 'investment' ? 'bg-blue-100' :
+                                    'bg-gray-100'
+                                  }`}>
+                                    {transaction.type === 'earning' && <TrendingUp className="w-5 h-5 text-green-600" />}
+                                    {transaction.type === 'withdrawal' && <TrendingDown className="w-5 h-5 text-red-600" />}
+                                    {transaction.type === 'investment' && <DollarSign className="w-5 h-5 text-blue-600" />}
+                                    {!['earning', 'withdrawal', 'investment'].includes(transaction.type) && <Activity className="w-5 h-5 text-gray-600" />}
+                                  </div>
+                                  <div>
+                                    <div className="flex items-center space-x-3">
+                                      <h4 className="text-sm font-semibold text-gray-900 capitalize">
+                                        {transaction.type}
+                                      </h4>
+                                      {transaction.status === 'completed' && <CheckCircle className="w-4 h-4 text-green-600" />}
+                                      {transaction.status === 'pending' && <Clock className="w-4 h-4 text-amber-600" />}
+                                      {transaction.status === 'failed' && <XCircle className="w-4 h-4 text-red-600" />}
+                                    </div>
+                                    <div className="flex items-center space-x-3 mt-1 text-xs text-gray-600">
+                                      <span>{new Date(transaction.$createdAt).toLocaleDateString('en-US')}</span>
+                                      <span className="text-gray-400">•</span>
+                                      <span>{new Date(transaction.$createdAt).toLocaleTimeString('en-US', {
+                                        hour: '2-digit',
+                                        minute: '2-digit',
+                                        hour12: true
+                                      })}</span>
+                                    </div>
+                                  </div>
+                                </div>
+
+                                <div className="text-right">
+                                  <p className={`text-base font-bold ${
+                                    transaction.type === 'earning' ? 'text-green-600' :
+                                    transaction.type === 'withdrawal' ? 'text-red-600' :
+                                    'text-gray-900'
+                                  }`}>
+                                    {transaction.type === 'earning' ? '+' : transaction.type === 'withdrawal' ? '-' : ''}
+                                    {formatCurrency(transaction.amount)}
+                                  </p>
+                                  <p className="text-xs text-gray-500 mt-1 capitalize">
+                                    {transaction.status}
+                                  </p>
+                                </div>
+                              </div>
+                            </motion.div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {investments.length === 0 && transactions.length === 0 && (
+                    <div className="text-center py-12 bg-white rounded-lg border border-gray-200">
+                      <BarChart3 className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                      <h3 className="text-lg font-medium text-gray-900 mb-2">No Transactions or Investments</h3>
+                      <p className="text-gray-600">This user has no transaction or investment history yet.</p>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
