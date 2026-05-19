@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import ClickToCopy from "../components/ClickToCopy";
 import {
@@ -29,6 +29,8 @@ import {
   Plus,
   Edit,
   Users,
+  Sparkles,
+  ChevronRight,
 } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import { formatCurrency } from "../lib/appwrite";
@@ -37,6 +39,326 @@ import PasswordChangeModal from "../components/PasswordChangeModal";
 import LoginHistoryModal from "../components/LoginHistoryModal";
 import UserReferralPanel from "../components/UserReferralPanel";
 
+/* ─────────────────────────────────────────────
+   Inline styles / design tokens
+───────────────────────────────────────────── */
+const S: Record<string, React.CSSProperties> = {
+  root: {
+    minHeight: "100vh",
+    background: "linear-gradient(135deg, #0a0a14 0%, #111128 50%, #0d0d1f 100%)",
+    fontFamily: "'DM Sans', 'Helvetica Neue', sans-serif",
+    color: "#e2e2f0",
+    padding: "2rem 1.5rem",
+  },
+  glassCard: {
+    background: "rgba(255,255,255,0.04)",
+    backdropFilter: "blur(24px)",
+    WebkitBackdropFilter: "blur(24px)",
+    border: "1px solid rgba(255,255,255,0.08)",
+    borderRadius: "20px",
+    overflow: "hidden",
+  },
+  glassCardActive: {
+    background: "rgba(139,92,246,0.12)",
+    backdropFilter: "blur(24px)",
+    WebkitBackdropFilter: "blur(24px)",
+    border: "1px solid rgba(139,92,246,0.35)",
+    borderRadius: "16px",
+    overflow: "hidden",
+  },
+  accentGradient: {
+    background: "linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%)",
+  },
+  accentGradientText: {
+    background: "linear-gradient(135deg, #a78bfa 0%, #f472b6 100%)",
+    WebkitBackgroundClip: "text",
+    WebkitTextFillColor: "transparent",
+    backgroundClip: "text",
+  },
+  input: {
+    width: "100%",
+    background: "rgba(255,255,255,0.06)",
+    border: "1px solid rgba(255,255,255,0.1)",
+    borderRadius: "12px",
+    padding: "10px 14px",
+    color: "#e2e2f0",
+    fontSize: "0.875rem",
+    outline: "none",
+    transition: "border-color 0.2s, box-shadow 0.2s",
+    boxSizing: "border-box" as const,
+  },
+  select: {
+    width: "100%",
+    background: "rgba(20,20,40,0.9)",
+    border: "1px solid rgba(255,255,255,0.1)",
+    borderRadius: "12px",
+    padding: "10px 14px",
+    color: "#e2e2f0",
+    fontSize: "0.875rem",
+    outline: "none",
+    cursor: "pointer",
+  },
+  label: {
+    fontSize: "0.72rem",
+    fontWeight: 600,
+    letterSpacing: "0.08em",
+    textTransform: "uppercase" as const,
+    color: "#9090b0",
+    marginBottom: "6px",
+    display: "block",
+  },
+  fieldDisplay: {
+    background: "rgba(255,255,255,0.04)",
+    border: "1px solid rgba(255,255,255,0.07)",
+    borderRadius: "12px",
+    padding: "10px 14px",
+    display: "flex",
+    alignItems: "center",
+    gap: "10px",
+    fontSize: "0.875rem",
+    color: "#c4c4dc",
+    minHeight: "42px",
+  },
+  btnPrimary: {
+    background: "linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%)",
+    border: "none",
+    borderRadius: "12px",
+    padding: "10px 20px",
+    color: "#fff",
+    fontWeight: 600,
+    fontSize: "0.875rem",
+    cursor: "pointer",
+    display: "inline-flex",
+    alignItems: "center",
+    gap: "6px",
+    transition: "opacity 0.2s, transform 0.15s",
+    letterSpacing: "0.02em",
+  },
+  btnSecondary: {
+    background: "rgba(255,255,255,0.07)",
+    border: "1px solid rgba(255,255,255,0.12)",
+    borderRadius: "12px",
+    padding: "10px 20px",
+    color: "#c4c4dc",
+    fontWeight: 600,
+    fontSize: "0.875rem",
+    cursor: "pointer",
+    display: "inline-flex",
+    alignItems: "center",
+    gap: "6px",
+    transition: "background 0.2s",
+    letterSpacing: "0.02em",
+  },
+  btnSuccess: {
+    background: "linear-gradient(135deg, #10b981 0%, #059669 100%)",
+    border: "none",
+    borderRadius: "12px",
+    padding: "10px 16px",
+    color: "#fff",
+    fontWeight: 600,
+    fontSize: "0.875rem",
+    cursor: "pointer",
+    display: "inline-flex",
+    alignItems: "center",
+    gap: "6px",
+    transition: "opacity 0.2s",
+  },
+  btnDanger: {
+    background: "rgba(239,68,68,0.12)",
+    border: "1px solid rgba(239,68,68,0.25)",
+    borderRadius: "12px",
+    padding: "8px 12px",
+    color: "#f87171",
+    fontWeight: 600,
+    fontSize: "0.8rem",
+    cursor: "pointer",
+    display: "inline-flex",
+    alignItems: "center",
+    gap: "6px",
+    transition: "background 0.2s",
+  },
+  divider: {
+    height: "1px",
+    background: "rgba(255,255,255,0.06)",
+    margin: "20px 0",
+  },
+};
+
+/* Toggle Switch */
+const Toggle = ({
+  checked,
+  onChange,
+}: {
+  checked: boolean;
+  onChange: (v: boolean) => void;
+}) => (
+  <button
+    onClick={() => onChange(!checked)}
+    style={{
+      width: "52px",
+      height: "28px",
+      borderRadius: "14px",
+      border: "none",
+      cursor: "pointer",
+      position: "relative",
+      transition: "background 0.3s",
+      background: checked
+        ? "linear-gradient(135deg, #8b5cf6, #ec4899)"
+        : "rgba(255,255,255,0.12)",
+      flexShrink: 0,
+    }}
+  >
+    <span
+      style={{
+        position: "absolute",
+        top: "3px",
+        left: checked ? "27px" : "3px",
+        width: "22px",
+        height: "22px",
+        borderRadius: "50%",
+        background: "#fff",
+        transition: "left 0.3s",
+        boxShadow: "0 2px 6px rgba(0,0,0,0.4)",
+      }}
+    />
+  </button>
+);
+
+/* Badge */
+const Badge = ({
+  status,
+}: {
+  status: "verified" | "rejected" | "pending" | string;
+}) => {
+  const map: Record<string, { bg: string; color: string; label: string }> = {
+    verified: { bg: "rgba(16,185,129,0.15)", color: "#34d399", label: "Verified" },
+    rejected: { bg: "rgba(239,68,68,0.15)", color: "#f87171", label: "Rejected" },
+    pending: { bg: "rgba(245,158,11,0.15)", color: "#fbbf24", label: "Pending" },
+  };
+  const s = map[status] || map.pending;
+  return (
+    <span
+      style={{
+        background: s.bg,
+        color: s.color,
+        borderRadius: "8px",
+        padding: "3px 10px",
+        fontSize: "0.72rem",
+        fontWeight: 700,
+        letterSpacing: "0.05em",
+        textTransform: "uppercase",
+      }}
+    >
+      {s.label}
+    </span>
+  );
+};
+
+/* Section Header */
+const SectionHeader = ({
+  icon: Icon,
+  title,
+  subtitle,
+  action,
+}: {
+  icon: any;
+  title: string;
+  subtitle?: string;
+  action?: React.ReactNode;
+}) => (
+  <div
+    style={{
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "space-between",
+      marginBottom: "28px",
+      gap: "12px",
+    }}
+  >
+    <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
+      <div
+        style={{
+          width: "44px",
+          height: "44px",
+          borderRadius: "14px",
+          background: "linear-gradient(135deg, rgba(139,92,246,0.25), rgba(236,72,153,0.25))",
+          border: "1px solid rgba(139,92,246,0.3)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          flexShrink: 0,
+        }}
+      >
+        <Icon size={20} style={{ color: "#a78bfa" }} />
+      </div>
+      <div>
+        <h3 style={{ margin: 0, fontSize: "1.05rem", fontWeight: 700, color: "#f0f0fa" }}>
+          {title}
+        </h3>
+        {subtitle && (
+          <p style={{ margin: "2px 0 0", fontSize: "0.8rem", color: "#7070a0" }}>
+            {subtitle}
+          </p>
+        )}
+      </div>
+    </div>
+    {action}
+  </div>
+);
+
+/* Settings Row (toggle/preference row) */
+const SettingsRow = ({
+  icon: Icon,
+  title,
+  description,
+  right,
+}: {
+  icon?: any;
+  title: string;
+  description: string;
+  right: React.ReactNode;
+}) => (
+  <div
+    style={{
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "space-between",
+      padding: "18px 20px",
+      background: "rgba(255,255,255,0.03)",
+      border: "1px solid rgba(255,255,255,0.07)",
+      borderRadius: "16px",
+      gap: "16px",
+    }}
+  >
+    <div style={{ display: "flex", alignItems: "center", gap: "14px", flex: 1 }}>
+      {Icon && (
+        <div
+          style={{
+            width: "36px",
+            height: "36px",
+            borderRadius: "10px",
+            background: "rgba(139,92,246,0.12)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            flexShrink: 0,
+          }}
+        >
+          <Icon size={16} style={{ color: "#a78bfa" }} />
+        </div>
+      )}
+      <div>
+        <div style={{ fontWeight: 600, fontSize: "0.9rem", color: "#e2e2f0" }}>{title}</div>
+        <div style={{ fontSize: "0.78rem", color: "#7070a0", marginTop: "2px" }}>{description}</div>
+      </div>
+    </div>
+    {right}
+  </div>
+);
+
+/* ═══════════════════════════════════════════════
+   MAIN COMPONENT
+═══════════════════════════════════════════════ */
 const Settings = () => {
   const {
     user,
@@ -59,13 +381,8 @@ const Settings = () => {
   const [showBalance, setShowBalance] = useState(true);
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [preferredCurrency, setPreferredCurrency] = useState("USD");
-  const [notifications, setNotifications] = useState({
-    email: true,
-    push: true,
-    sms: false,
-  });
+  const [notifications, setNotifications] = useState({ email: true, push: true, sms: false });
 
-  // Profile editing states
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState({
     name: userProfile?.name || "",
@@ -86,9 +403,7 @@ const Settings = () => {
   });
   const [isLoading, setIsLoading] = useState(false);
   const [profilePicture, setProfilePicture] = useState<string | File | null>(
-    userProfile?.profilePicture ||
-      localStorage.getItem(`profilePicture_${user?.$id}`) ||
-      null
+    userProfile?.profilePicture || localStorage.getItem(`profilePicture_${user?.$id}`) || null
   );
   const [isUploading, setIsUploading] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -98,112 +413,56 @@ const Settings = () => {
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [showLoginHistoryModal, setShowLoginHistoryModal] = useState(false);
   const [paymentMethodTypes, setPaymentMethodTypes] = useState<any[]>([]);
-
-  // Payment methods are now managed by AuthContext
   const [showAddPaymentModal, setShowAddPaymentModal] = useState(false);
   const [editingPayment, setEditingPayment] = useState(null);
   const [newPaymentMethod, setNewPaymentMethod] = useState({
-    type: "paypal",
-    name: "",
-    email: "",
-    username: "",
-    phoneNumber: "",
-    address: "",
+    type: "paypal", name: "", email: "", username: "", phoneNumber: "", address: "",
   });
 
-  // Handle URL query parameter to automatically open payment methods tab
   useEffect(() => {
     const tab = searchParams.get("tab");
-    if (tab === "payment") {
-      setActiveTab("payment");
-    }
+    if (tab === "payment") setActiveTab("payment");
     fetchPaymentMethodTypes();
   }, [searchParams]);
 
   const fetchPaymentMethodTypes = async () => {
-    try {
-      const types = await getPaymentMethodTypes();
-      setPaymentMethodTypes(types);
-    } catch (error) {
-      console.error("Error fetching payment method types:", error);
-    }
+    try { setPaymentMethodTypes(await getPaymentMethodTypes()); } catch {}
   };
 
-  // Load user preferences on component mount
   useEffect(() => {
     if (userProfile?.preferences) {
-      const prefs = userProfile.preferences;
-
-      // Load dark mode preference
-      if (prefs.darkMode !== undefined) {
-        setIsDarkMode(prefs.darkMode);
-        if (prefs.darkMode) {
-          document.documentElement.classList.add("dark");
-        } else {
-          document.documentElement.classList.remove("dark");
-        }
-      }
-
-      // Load currency preference
-      if (prefs.currency) {
-        setPreferredCurrency(prefs.currency);
-      }
-
-      // Load show balance preference
-      if (prefs.showBalance !== undefined) {
-        setShowBalance(prefs.showBalance);
-      }
+      const p = userProfile.preferences;
+      if (p.darkMode !== undefined) setIsDarkMode(p.darkMode);
+      if (p.currency) setPreferredCurrency(p.currency);
+      if (p.showBalance !== undefined) setShowBalance(p.showBalance);
     }
   }, [userProfile]);
 
-  const handleEditChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
-  ) => {
-    setEditData({
-      ...editData,
-      [e.target.name]: e.target.value,
-    });
-  };
+  const handleEditChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
+    setEditData({ ...editData, [e.target.name]: e.target.value });
 
   const handleSave = async () => {
     setIsLoading(true);
     try {
       const result = await updateUserProfile({
-        name: editData.name,
-        phone: editData.phone,
+        name: editData.name, phone: editData.phone,
         personalInfo: {
-          firstName: editData.firstName,
-          lastName: editData.lastName,
-          dateOfBirth: editData.dateOfBirth,
-          address: editData.address,
-          city: editData.city,
-          state: editData.state,
-          zipCode: editData.zipCode,
-          country: editData.country,
-          occupation: editData.occupation,
-          annualIncome: editData.annualIncome
-            ? Number(editData.annualIncome)
-            : undefined,
-          ssn: editData.ssn,
-          idType: editData.idType,
+          firstName: editData.firstName, lastName: editData.lastName,
+          dateOfBirth: editData.dateOfBirth, address: editData.address,
+          city: editData.city, state: editData.state, zipCode: editData.zipCode,
+          country: editData.country, occupation: editData.occupation,
+          annualIncome: editData.annualIncome ? Number(editData.annualIncome) : undefined,
+          ssn: editData.ssn, idType: editData.idType,
         },
         secretPhrase: editData.secretPhrase,
       });
-
-      if (result.success) {
-        setIsEditing(false);
-      }
-    } catch (error) {
-      console.error("Error updating profile:", error);
-    } finally {
-      setIsLoading(false);
-    }
+      if (result.success) setIsEditing(false);
+    } finally { setIsLoading(false); }
   };
 
   const handleCancel = () => {
     setEditData({
-      name: userProfile?.name || "",
-      phone: userProfile?.phone || "",
+      name: userProfile?.name || "", phone: userProfile?.phone || "",
       firstName: userProfile?.personalInfo?.firstName || "",
       lastName: userProfile?.personalInfo?.lastName || "",
       dateOfBirth: userProfile?.personalInfo?.dateOfBirth || "",
@@ -221,1761 +480,718 @@ const Settings = () => {
     setIsEditing(false);
   };
 
-  // Profile picture upload functions
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (file) {
-      // Validate file type
-      if (!file.type.startsWith("image/")) {
-        alert("Please select an image file");
-        return;
-      }
-
-      // Validate file size (max 5MB)
-      if (file.size > 5 * 1024 * 1024) {
-        alert("File size must be less than 5MB");
-        return;
-      }
-
-      // Create preview URL
-      const url = URL.createObjectURL(file);
-      setPreviewUrl(url);
-      setProfilePicture(file);
-    }
+    if (!file) return;
+    if (!file.type.startsWith("image/")) { alert("Please select an image file"); return; }
+    if (file.size > 5 * 1024 * 1024) { alert("File size must be less than 5MB"); return; }
+    setPreviewUrl(URL.createObjectURL(file));
+    setProfilePicture(file);
   };
 
   const handleUploadPicture = async () => {
     if (!profilePicture) return;
-
     setIsUploading(true);
     try {
-      // Convert file to base64 for storage
       const base64 = await convertToBase64(profilePicture as unknown as File);
-
-      // Update user profile with new picture
-      const result = await updateUserProfile({
-        profilePicture: base64 as string,
-      });
-
-      if (result.success) {
-        setPreviewUrl(null);
-        // Clear the file input
-        if (fileInputRef.current) {
-          fileInputRef.current.value = "";
-        }
-      }
-    } catch (error) {
-      console.error("Error uploading profile picture:", error);
-      alert("Failed to upload profile picture");
-    } finally {
-      setIsUploading(false);
-    }
+      const result = await updateUserProfile({ profilePicture: base64 as string });
+      if (result.success) { setPreviewUrl(null); if (fileInputRef.current) fileInputRef.current.value = ""; }
+    } catch { alert("Failed to upload profile picture"); }
+    finally { setIsUploading(false); }
   };
 
   const handleRemovePicture = async () => {
     setIsUploading(true);
     try {
-      const result = await updateUserProfile({
-        profilePicture: null,
-      });
-
-      if (result.success) {
-        setProfilePicture(null);
-        setPreviewUrl(null);
-        if (fileInputRef.current) {
-          fileInputRef.current.value = "";
-        }
-      }
-    } catch (error) {
-      console.error("Error removing profile picture:", error);
-      alert("Failed to remove profile picture");
-    } finally {
-      setIsUploading(false);
-    }
+      const result = await updateUserProfile({ profilePicture: null });
+      if (result.success) { setProfilePicture(null); setPreviewUrl(null); if (fileInputRef.current) fileInputRef.current.value = ""; }
+    } catch { alert("Failed to remove profile picture"); }
+    finally { setIsUploading(false); }
   };
 
-  const convertToBase64 = (file: File) => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = () => resolve(reader.result);
-      reader.onerror = (error) => reject(error);
+  const convertToBase64 = (file: File) =>
+    new Promise((res, rej) => {
+      const r = new FileReader();
+      r.readAsDataURL(file);
+      r.onload = () => res(r.result);
+      r.onerror = rej;
     });
-  };
 
-  // Get user's investment plan
-  const userPlan: any = null; // Could be calculated from user's investments if needed
-
-  // Calculate portfolio stats
-  const totalInvested =
-    investments?.reduce(
-      (sum, inv) => sum + (inv.status === "active" ? inv.amount : 0),
-      0
-    ) || 0;
-  const activeInvestments =
-    investments?.filter((inv) => inv.status === "active").length || 0;
-  const joinDate = userProfile?.createdAt
-    ? new Date(userProfile.createdAt).toLocaleDateString("en-US")
-    : "N/A";
+  const userPlan: any = null;
+  const totalInvested = investments?.reduce((s, i) => s + (i.status === "active" ? i.amount : 0), 0) || 0;
+  const activeInvestments = investments?.filter((i) => i.status === "active").length || 0;
+  const joinDate = userProfile?.createdAt ? new Date(userProfile.createdAt).toLocaleDateString("en-US") : "N/A";
 
   const tabs = [
     { id: "profile", name: "Profile", icon: User },
     { id: "notifications", name: "Notifications", icon: Bell },
     { id: "security", name: "Security", icon: Shield },
-    { id: "payment", name: "Payment Methods", icon: CreditCard },
+    { id: "payment", name: "Payment", icon: CreditCard },
     { id: "referrals", name: "Referrals", icon: Users },
     { id: "preferences", name: "Preferences", icon: Globe },
   ];
 
-  const handleNotificationChange = (type: string, value: boolean) => {
-    setNotifications((prev) => ({
-      ...prev,
-      [type]: value,
-    }));
-  };
-
-  // Handle dark mode toggle
-  const handleDarkModeToggle = async (enabled: boolean) => {
-    setIsDarkMode(enabled);
-
-    // Apply dark mode to the document
-    if (enabled) {
-      document.documentElement.classList.add("dark");
-    } else {
-      document.documentElement.classList.remove("dark");
-    }
-
-    // Save to user profile
-    try {
-      await updateUserProfile({
-        preferences: {
-          ...userProfile?.preferences,
-          darkMode: enabled,
-        },
-      } as any);
-    } catch (error) {
-      console.error("Failed to save dark mode preference:", error);
-    }
-  };
-
-  // Handle currency change
-  const handleCurrencyChange = async (currency: string) => {
-    setPreferredCurrency(currency);
-
-    // Save to user profile
-    try {
-      await updateUserProfile({
-        preferences: {
-          ...userProfile?.preferences,
-          currency: currency,
-        },
-      } as any);
-    } catch (error) {
-      console.error("Failed to save currency preference:", error);
-    }
-  };
-
-  // Handle show balance toggle
-  const handleShowBalanceToggle = async (enabled: boolean) => {
-    setShowBalance(enabled);
-
-    // Save to user profile
-    try {
-      await updateUserProfile({
-        preferences: {
-          ...userProfile?.preferences,
-          showBalance: enabled,
-        },
-      } as any);
-    } catch (error) {
-      console.error("Failed to save show balance preference:", error);
-    }
-  };
-
-  // Payment method handlers
   const handleAddPaymentMethod = async () => {
-    let displayName = "";
-    let displayAccount = "";
-    let isValid = false;
-
+    let displayName = "", displayAccount = "", isValid = false;
     switch (newPaymentMethod.type) {
       case "paypal":
-        if (
-          newPaymentMethod.email ||
-          newPaymentMethod.username ||
-          newPaymentMethod.phoneNumber
-        ) {
+        if (newPaymentMethod.email || newPaymentMethod.username || newPaymentMethod.phoneNumber) {
           displayName = "PayPal";
-          displayAccount =
-            newPaymentMethod.email ||
-            newPaymentMethod.username ||
-            newPaymentMethod.phoneNumber;
+          displayAccount = newPaymentMethod.email || newPaymentMethod.username || newPaymentMethod.phoneNumber;
           isValid = true;
-        }
-        break;
+        } break;
       case "venmo":
-        if (
-          newPaymentMethod.email ||
-          newPaymentMethod.username ||
-          newPaymentMethod.phoneNumber
-        ) {
+        if (newPaymentMethod.email || newPaymentMethod.username || newPaymentMethod.phoneNumber) {
           displayName = "Venmo";
-          displayAccount = newPaymentMethod.username
-            ? `@${newPaymentMethod.username}`
-            : newPaymentMethod.email || newPaymentMethod.phoneNumber;
+          displayAccount = newPaymentMethod.username ? `@${newPaymentMethod.username}` : newPaymentMethod.email || newPaymentMethod.phoneNumber;
           isValid = true;
-        }
-        break;
+        } break;
       case "cashapp":
         if (newPaymentMethod.username || newPaymentMethod.phoneNumber) {
           displayName = "Cash App";
-          displayAccount = newPaymentMethod.username
-            ? `$${newPaymentMethod.username}`
-            : newPaymentMethod.phoneNumber;
+          displayAccount = newPaymentMethod.username ? `$${newPaymentMethod.username}` : newPaymentMethod.phoneNumber;
           isValid = true;
-        }
-        break;
-      case "usdt":
+        } break;
+      case "usdt": case "ethereum": case "bitcoin":
         if (newPaymentMethod.address) {
-          displayName = "USDT";
-          displayAccount = `${newPaymentMethod.address.slice(
-            0,
-            6
-          )}...${newPaymentMethod.address.slice(-4)}`;
+          displayName = newPaymentMethod.type === "usdt" ? "USDT" : newPaymentMethod.type === "ethereum" ? "Ethereum" : "Bitcoin";
+          displayAccount = `${newPaymentMethod.address.slice(0, 6)}...${newPaymentMethod.address.slice(-4)}`;
           isValid = true;
-        }
-        break;
-      case "ethereum":
-        if (newPaymentMethod.address) {
-          displayName = "Ethereum";
-          displayAccount = `${newPaymentMethod.address.slice(
-            0,
-            6
-          )}...${newPaymentMethod.address.slice(-4)}`;
-          isValid = true;
-        }
-        break;
-      case "bitcoin":
-        if (newPaymentMethod.address) {
-          displayName = "Bitcoin";
-          displayAccount = `${newPaymentMethod.address.slice(
-            0,
-            6
-          )}...${newPaymentMethod.address.slice(-4)}`;
-          isValid = true;
-        }
-        break;
+        } break;
     }
-
-    if (!isValid) {
-      alert("Please fill in the required information for this payment method");
-      return;
-    }
-
-    const paymentMethodData = {
-      type: newPaymentMethod.type as
-        | "paypal"
-        | "venmo"
-        | "cashapp"
-        | "usdt"
-        | "ethereum"
-        | "bitcoin",
-      name: displayName,
-      accountNumber: displayAccount,
-      isDefault: paymentMethods.length === 0,
-      status: "pending" as "pending" | "verified" | "rejected",
-      email: newPaymentMethod.email || "",
-      username: newPaymentMethod.username || "",
-      phoneNumber: newPaymentMethod.phoneNumber || "",
-      address: newPaymentMethod.address || "",
+    if (!isValid) { alert("Please fill in the required information"); return; }
+    const data = {
+      type: newPaymentMethod.type as any, name: displayName, accountNumber: displayAccount,
+      isDefault: paymentMethods.length === 0, status: "pending" as any,
+      email: newPaymentMethod.email || "", username: newPaymentMethod.username || "",
+      phoneNumber: newPaymentMethod.phoneNumber || "", address: newPaymentMethod.address || "",
     };
-
-    const result = await addPaymentMethod(paymentMethodData);
-
+    const result = await addPaymentMethod(data);
     if (result.success) {
-      setNewPaymentMethod({
-        type: "paypal",
-        name: "",
-        email: "",
-        username: "",
-        phoneNumber: "",
-        address: "",
-      });
+      setNewPaymentMethod({ type: "paypal", name: "", email: "", username: "", phoneNumber: "", address: "" });
       setShowAddPaymentModal(false);
     }
   };
 
   const handleDeletePaymentMethod = async (id: string) => {
-    if (
-      window.confirm("Are you sure you want to delete this payment method?")
-    ) {
-      await deletePaymentMethod(id);
-    }
+    if (window.confirm("Delete this payment method?")) await deletePaymentMethod(id);
   };
 
-  const handleSetDefaultPayment = async (id: string) => {
-    await setDefaultPaymentMethod(id);
-  };
-
-  const handleEditPaymentMethod = (method: any) => {
-    setEditingPayment(method);
-    setNewPaymentMethod({
-      type: method.type,
-      name: "",
-      email: method.email || "",
-      username: method.username || "",
-      phoneNumber: method.phoneNumber || "",
-      address: method.address || "",
-    });
-    setShowAddPaymentModal(true);
-  };
+  /* ── Field pair component ── */
+  const Field = ({
+    label, icon: Icon, editing, name, type = "text", value, display, placeholder, children,
+  }: any) => (
+    <div>
+      <label style={S.label}>{label}</label>
+      {editing ? (
+        children || (
+          <input
+            name={name} type={type} value={value}
+            onChange={handleEditChange} placeholder={placeholder}
+            style={S.input}
+            onFocus={e => { e.target.style.borderColor = "rgba(139,92,246,0.6)"; e.target.style.boxShadow = "0 0 0 3px rgba(139,92,246,0.12)"; }}
+            onBlur={e => { e.target.style.borderColor = "rgba(255,255,255,0.1)"; e.target.style.boxShadow = "none"; }}
+          />
+        )
+      ) : (
+        <div style={S.fieldDisplay}>
+          {Icon && <Icon size={15} style={{ color: "#7070a0", flexShrink: 0 }} />}
+          <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+            {display || "Not provided"}
+          </span>
+        </div>
+      )}
+    </div>
+  );
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6 }}
-      >
-        <div className="flex px-2 md:px-6 items-center justify-between">
+    <div style={S.root}>
+      {/* Ambient background orbs */}
+      <div style={{ position: "fixed", inset: 0, pointerEvents: "none", zIndex: 0, overflow: "hidden" }}>
+        <div style={{ position: "absolute", top: "-20%", left: "-10%", width: "600px", height: "600px", borderRadius: "50%", background: "radial-gradient(circle, rgba(139,92,246,0.08) 0%, transparent 70%)" }} />
+        <div style={{ position: "absolute", bottom: "-15%", right: "-5%", width: "500px", height: "500px", borderRadius: "50%", background: "radial-gradient(circle, rgba(236,72,153,0.07) 0%, transparent 70%)" }} />
+      </div>
+
+      <div style={{ position: "relative", zIndex: 1, maxWidth: "1280px", margin: "0 auto" }}>
+        {/* ── Header ── */}
+        <motion.div
+          initial={{ opacity: 0, y: -24 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "36px" }}
+        >
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Settings</h1>
-            <p className="text-gray-600 mt-1">
-              Manage your account settings and preferences
+            <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "6px" }}>
+              <Sparkles size={20} style={{ color: "#a78bfa" }} />
+              <span style={{ fontSize: "0.75rem", fontWeight: 700, letterSpacing: "0.15em", textTransform: "uppercase", color: "#7070a0" }}>
+                Account Settings
+              </span>
+            </div>
+            <h1 style={{ margin: 0, fontSize: "clamp(1.8rem, 4vw, 2.6rem)", fontWeight: 800, ...S.accentGradientText }}>
+              Settings
+            </h1>
+            <p style={{ margin: "6px 0 0", color: "#6060a0", fontSize: "0.9rem" }}>
+              Manage your account, security & preferences
             </p>
           </div>
           <button
             onClick={() => navigate("/dashboard")}
-            className="flex md:hidden items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors duration-200"
+            style={{ ...S.btnSecondary, fontSize: "0.8rem" }}
+            onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,0.1)")}
+            onMouseLeave={e => (e.currentTarget.style.background = "rgba(255,255,255,0.07)")}
           >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            <span className="hidden md:block">Back to Dashboard</span>
+            <ArrowLeft size={15} />
+            <span style={{ display: "none" }} className="md-show">Dashboard</span>
           </button>
-        </div>
-      </motion.div>
+        </motion.div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        {/* Sidebar */}
-        <motion.div
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.6, delay: 0.1 }}
-          className="lg:col-span-1"
-        >
-          <div className="card">
-            <div className="card-body p-0">
-              <nav className="space-y-1">
-                {tabs.map((tab) => {
+        <div style={{ display: "grid", gridTemplateColumns: "240px 1fr", gap: "24px", alignItems: "start" }}>
+
+          {/* ── Sidebar ── */}
+          <motion.div
+            initial={{ opacity: 0, x: -24 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.6, delay: 0.1 }}
+          >
+            <div style={{ ...S.glassCard, padding: "8px" }}>
+              {/* Avatar mini */}
+              <div style={{ padding: "16px 12px 20px", borderBottom: "1px solid rgba(255,255,255,0.06)", marginBottom: "8px" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                  <div style={{ width: "42px", height: "42px", borderRadius: "12px", background: "linear-gradient(135deg,#8b5cf6,#ec4899)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.1rem", fontWeight: 800, color: "#fff", overflow: "hidden", flexShrink: 0 }}>
+                    {previewUrl || (profilePicture && typeof profilePicture === "string")
+                      ? <img src={previewUrl || (typeof profilePicture === "string" ? profilePicture : "")} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                      : (userProfile?.name || user?.name || "U").charAt(0).toUpperCase()}
+                  </div>
+                  <div style={{ overflow: "hidden" }}>
+                    <div style={{ fontWeight: 700, fontSize: "0.85rem", color: "#f0f0fa", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                      {userProfile?.name || user?.name || "User"}
+                    </div>
+                    <div style={{ fontSize: "0.72rem", color: "#7070a0" }}>
+                      {userProfile?.status === "active" ? "✦ Active" : "Inactive"}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <nav>
+                {tabs.map((tab, i) => {
                   const Icon = tab.icon;
+                  const active = activeTab === tab.id;
                   return (
-                    <button
+                    <motion.button
                       key={tab.id}
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: 0.05 * i }}
                       onClick={() => setActiveTab(tab.id)}
-                      className={`w-full flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors ${
-                        activeTab === tab.id
-                          ? "bg-primary-100 text-primary-700 border-r-2 border-primary-600"
-                          : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
-                      }`}
+                      style={{
+                        width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between",
+                        padding: "11px 14px", borderRadius: "12px", border: "none", cursor: "pointer",
+                        background: active ? "linear-gradient(135deg,rgba(139,92,246,0.18),rgba(236,72,153,0.12))" : "transparent",
+                        color: active ? "#d4b3ff" : "#7070a0",
+                        fontWeight: active ? 700 : 500, fontSize: "0.85rem",
+                        marginBottom: "2px", transition: "all 0.2s",
+                        outline: "none",
+                        boxShadow: active ? "inset 0 0 0 1px rgba(139,92,246,0.3)" : "none",
+                      }}
+                      onMouseEnter={e => { if (!active) e.currentTarget.style.background = "rgba(255,255,255,0.04)"; }}
+                      onMouseLeave={e => { if (!active) e.currentTarget.style.background = "transparent"; }}
                     >
-                      <Icon
-                        className={`mr-3 h-5 w-5 ${
-                          activeTab === tab.id
-                            ? "text-primary-600"
-                            : "text-gray-400"
-                        }`}
-                      />
-                      {tab.name}
-                    </button>
+                      <span style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                        <Icon size={16} style={{ color: active ? "#a78bfa" : "#505070" }} />
+                        {tab.name}
+                      </span>
+                      {active && <ChevronRight size={14} style={{ color: "#a78bfa" }} />}
+                    </motion.button>
                   );
                 })}
               </nav>
             </div>
-          </div>
-        </motion.div>
+          </motion.div>
 
-        {/* Content */}
-        <motion.div
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.6, delay: 0.2 }}
-          className="lg:col-span-3"
-        >
-          <div className="card">
-            <div className="card-body p-3 md:p-6">
-              {/* Profile Settings */}
-              {activeTab === "profile" && (
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                  {/* Profile Information */}
-                  <motion.div
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ duration: 0.6, delay: 0.1 }}
-                    className="lg:col-span-2"
-                  >
-                    <div className="card ">
-                      <div className="card-header">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center space-x-3">
-                            <div className="w-10 h-10 bg-primary-100 rounded-lg flex items-center justify-center">
-                              <User className="w-5 h-5 text-primary-600" />
-                            </div>
-                            <div>
-                              <h3 className="text-lg font-semibold text-gray-900">
-                                Personal Information
-                              </h3>
-                              <p className="text-sm text-gray-600">
-                                Update your account details
-                              </p>
-                            </div>
-                          </div>
-                          {!isEditing ? (
-                            <button
-                              onClick={() => setIsEditing(true)}
-                              className="btn-secondary px-4 py-2 text-sm"
-                            >
-                              <Edit3 className="w-4 h-4 mr-2" />
-                              Edit
+          {/* ── Main Content ── */}
+          <motion.div
+            initial={{ opacity: 0, x: 24 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+          >
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={activeTab}
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                transition={{ duration: 0.3 }}
+              >
+
+                {/* ════════════ PROFILE ════════════ */}
+                {activeTab === "profile" && (
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 320px", gap: "20px" }}>
+                    {/* Personal Info */}
+                    <div style={{ ...S.glassCard, padding: "28px" }}>
+                      <SectionHeader
+                        icon={User} title="Personal Information" subtitle="Update your account details"
+                        action={
+                          !isEditing ? (
+                            <button style={S.btnSecondary} onClick={() => setIsEditing(true)}>
+                              <Edit3 size={15} /> Edit
                             </button>
                           ) : (
-                            <div className="flex space-x-2">
-                              <button
-                                onClick={handleSave}
-                                disabled={isLoading}
-                                className="btn-success px-4 py-2 text-sm disabled:opacity-50"
-                              >
-                                {isLoading ? (
-                                  <LoadingSpinner size="sm" />
-                                ) : (
-                                  <Check className="w-4 h-4" />
-                                )}
+                            <div style={{ display: "flex", gap: "8px" }}>
+                              <button style={S.btnSuccess} onClick={handleSave} disabled={isLoading}>
+                                {isLoading ? <LoadingSpinner size="sm" /> : <Check size={15} />}
                               </button>
-                              <button
-                                onClick={handleCancel}
-                                className="btn-secondary px-4 py-2 text-sm"
-                              >
-                                <X className="w-4 h-4" />
+                              <button style={S.btnSecondary} onClick={handleCancel}>
+                                <X size={15} />
                               </button>
                             </div>
+                          )
+                        }
+                      />
+
+                      {/* Avatar */}
+                      <div style={{ display: "flex", alignItems: "center", gap: "24px", marginBottom: "28px", padding: "20px", background: "rgba(139,92,246,0.06)", borderRadius: "16px", border: "1px solid rgba(139,92,246,0.15)" }}>
+                        <div style={{ position: "relative", flexShrink: 0 }}>
+                          <div style={{ width: "80px", height: "80px", borderRadius: "50%", background: "linear-gradient(135deg,#8b5cf6,#ec4899)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "2rem", fontWeight: 800, color: "#fff", overflow: "hidden", border: "3px solid rgba(139,92,246,0.4)" }}>
+                            {previewUrl || (profilePicture && typeof profilePicture === "string")
+                              ? <img src={previewUrl || (typeof profilePicture === "string" ? profilePicture : "")} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                              : (userProfile?.name || user?.name || "U").charAt(0).toUpperCase()}
+                          </div>
+                          <div style={{ position: "absolute", bottom: 0, right: 0, width: "24px", height: "24px", borderRadius: "50%", background: "linear-gradient(135deg,#8b5cf6,#ec4899)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}
+                            onClick={() => fileInputRef.current?.click()}>
+                            <Camera size={12} style={{ color: "#fff" }} />
+                          </div>
+                        </div>
+                        <div style={{ flex: 1 }}>
+                          <div style={{ fontWeight: 700, fontSize: "1.1rem", color: "#f0f0fa" }}>{userProfile?.name || user?.name}</div>
+                          <div style={{ fontSize: "0.8rem", color: "#7070a0", marginBottom: "12px" }}>{user?.email}</div>
+                          <input ref={fileInputRef} type="file" accept="image/*" onChange={handleFileSelect} style={{ display: "none" }} />
+                          <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+                            <button style={{ ...S.btnSecondary, fontSize: "0.75rem", padding: "6px 12px" }} onClick={() => fileInputRef.current?.click()}>
+                              <Upload size={13} /> {previewUrl ? "Change" : "Upload"}
+                            </button>
+                            {(previewUrl || profilePicture) && (
+                              <button style={{ ...S.btnDanger, padding: "6px 12px", fontSize: "0.75rem" }} onClick={handleRemovePicture} disabled={isUploading}>
+                                <Trash2 size={13} /> Remove
+                              </button>
+                            )}
+                            {previewUrl && (
+                              <button style={{ ...S.btnPrimary, fontSize: "0.75rem", padding: "6px 12px" }} onClick={handleUploadPicture} disabled={isUploading}>
+                                {isUploading ? <LoadingSpinner size="sm" /> : <><Check size={13} /> Save</>}
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Form Grid */}
+                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "18px" }}>
+                        <Field label="Display Name" icon={User} editing={isEditing} name="name" value={editData.name} display={userProfile?.name} placeholder="Your name" />
+                        <Field label="Phone Number" icon={Mail} editing={isEditing} name="phone" type="tel" value={editData.phone} display={userProfile?.phone} placeholder="+1 (555) 000-0000" />
+
+                        <div>
+                          <label style={S.label}>Email Address</label>
+                          <div style={S.fieldDisplay}><Mail size={15} style={{ color: "#7070a0" }} />{user?.email || "Not provided"}</div>
+                          <p style={{ fontSize: "0.7rem", color: "#505070", marginTop: "4px" }}>Cannot be changed</p>
+                        </div>
+
+                        <div>
+                          <label style={S.label}>Member Since</label>
+                          <div style={S.fieldDisplay}><Calendar size={15} style={{ color: "#7070a0" }} />{joinDate}</div>
+                        </div>
+
+                        <div>
+                          <label style={S.label}>Account Status</label>
+                          <div style={S.fieldDisplay}><Shield size={15} style={{ color: "#10b981" }} /><span style={{ color: "#34d399", fontWeight: 600 }}>{userProfile?.status === "active" ? "Active" : "Inactive"}</span></div>
+                        </div>
+
+                        <div>
+                          <label style={S.label}>Account Number</label>
+                          <div style={{ ...S.fieldDisplay, justifyContent: "space-between" }}>
+                            <span style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                              <Hash size={15} style={{ color: "#7070a0" }} />
+                              <span style={{ fontFamily: "monospace", fontWeight: 700, fontSize: "0.95rem" }}>{userProfile?.accountNumber || "Not assigned"}</span>
+                            </span>
+                            {userProfile?.accountNumber && (
+                              <button onClick={() => navigator.clipboard.writeText(userProfile.accountNumber)} style={{ fontSize: "0.72rem", color: "#a78bfa", background: "none", border: "none", cursor: "pointer" }}>Copy</button>
+                            )}
+                          </div>
+                        </div>
+
+                        <Field label="First Name" icon={User} editing={isEditing} name="firstName" value={editData.firstName} display={userProfile?.personalInfo?.firstName} placeholder="First name" />
+                        <Field label="Last Name" icon={User} editing={isEditing} name="lastName" value={editData.lastName} display={userProfile?.personalInfo?.lastName} placeholder="Last name" />
+                        <Field label="Date of Birth" icon={Calendar} editing={isEditing} name="dateOfBirth" type="date" value={editData.dateOfBirth} display={userProfile?.personalInfo?.dateOfBirth} />
+                        <Field label="Occupation" icon={Briefcase} editing={isEditing} name="occupation" value={editData.occupation} display={userProfile?.personalInfo?.occupation} placeholder="Your occupation" />
+                        <Field label="Annual Income" icon={DollarSign} editing={isEditing} name="annualIncome" type="number" value={editData.annualIncome} display={userProfile?.personalInfo?.annualIncome ? formatCurrency(userProfile.personalInfo.annualIncome) : undefined} placeholder="Annual income" />
+                        <Field label="Address" icon={MapPin} editing={isEditing} name="address" value={editData.address} display={userProfile?.personalInfo?.address} placeholder="Street address" />
+                        <Field label="City" icon={MapPin} editing={isEditing} name="city" value={editData.city} display={userProfile?.personalInfo?.city} placeholder="City" />
+                        <Field label="State" icon={MapPin} editing={isEditing} name="state" value={editData.state} display={userProfile?.personalInfo?.state} placeholder="State" />
+                        <Field label="ZIP Code" icon={Hash} editing={isEditing} name="zipCode" value={editData.zipCode} display={userProfile?.personalInfo?.zipCode} placeholder="ZIP" />
+
+                        <div>
+                          <label style={S.label}>Country</label>
+                          {isEditing ? (
+                            <select name="country" style={S.select} value={editData.country} onChange={handleEditChange}>
+                              <option value="">Select country</option>
+                              {["US","CA","UK","AU","DE","FR","IT","ES","NL","SE","NO","DK","FI","CH","AT","BE","IE","PT","GR","LU","MT","CY","EE","LV","LT","PL","CZ","SK","SI","HU","RO","BG","HR","Other"].map(c => (
+                                <option key={c} value={c}>{c}</option>
+                              ))}
+                            </select>
+                          ) : (
+                            <div style={S.fieldDisplay}><MapPin size={15} style={{ color: "#7070a0" }} />{userProfile?.personalInfo?.country || "Not provided"}</div>
+                          )}
+                        </div>
+
+                        {/* SSN */}
+                        <div>
+                          <label style={S.label}>Social Security Number</label>
+                          {isEditing ? (
+                            <div style={{ position: "relative" }}>
+                              <input name="ssn" type={showSSN ? "text" : "password"} style={{ ...S.input, paddingRight: "42px" }} value={editData.ssn} onChange={handleEditChange} placeholder="XXX-XX-XXXX"
+                                onFocus={e => { e.target.style.borderColor = "rgba(139,92,246,0.6)"; e.target.style.boxShadow = "0 0 0 3px rgba(139,92,246,0.12)"; }}
+                                onBlur={e => { e.target.style.borderColor = "rgba(255,255,255,0.1)"; e.target.style.boxShadow = "none"; }} />
+                              <button type="button" onClick={() => setShowSSN(!showSSN)} style={{ position: "absolute", right: "12px", top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: "#7070a0" }}>
+                                {showSSN ? <EyeOff size={16} /> : <Eye size={16} />}
+                              </button>
+                            </div>
+                          ) : (
+                            <div style={S.fieldDisplay}><Shield size={15} style={{ color: "#7070a0" }} />{userProfile?.personalInfo?.ssn ? "•••-••-••••" : "Not provided"}</div>
+                          )}
+                        </div>
+
+                        <div>
+                          <label style={S.label}>ID Type</label>
+                          {isEditing ? (
+                            <select name="idType" style={S.select} value={editData.idType} onChange={handleEditChange}>
+                              <option value="">Select ID type</option>
+                              <option value="drivers-license">Driver's License</option>
+                              <option value="passport">Passport</option>
+                              <option value="state-id">State ID</option>
+                              <option value="national-id">National ID</option>
+                            </select>
+                          ) : (
+                            <div style={S.fieldDisplay}><FileText size={15} style={{ color: "#7070a0" }} />{userProfile?.personalInfo?.idType || "Not provided"}</div>
+                          )}
+                        </div>
+
+                        {/* Secret Phrase */}
+                        <div>
+                          <label style={S.label}>Secret Phrase</label>
+                          {isEditing ? (
+                            <div style={{ position: "relative" }}>
+                              <input name="secretPhrase" type={showSecretPhrase ? "text" : "password"} style={{ ...S.input, paddingRight: "42px" }} value={editData.secretPhrase} onChange={handleEditChange} placeholder="Your secret phrase"
+                                onFocus={e => { e.target.style.borderColor = "rgba(139,92,246,0.6)"; e.target.style.boxShadow = "0 0 0 3px rgba(139,92,246,0.12)"; }}
+                                onBlur={e => { e.target.style.borderColor = "rgba(255,255,255,0.1)"; e.target.style.boxShadow = "none"; }} />
+                              <button type="button" onClick={() => setShowSecretPhrase(!showSecretPhrase)} style={{ position: "absolute", right: "12px", top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: "#7070a0" }}>
+                                {showSecretPhrase ? <EyeOff size={16} /> : <Eye size={16} />}
+                              </button>
+                            </div>
+                          ) : (
+                            <div style={S.fieldDisplay}><Key size={15} style={{ color: "#7070a0" }} />{userProfile?.secretPhrase ? "••••••••" : "Not provided"}</div>
                           )}
                         </div>
                       </div>
-                      <div className="card-body space-y-6">
-                        {/* Profile Picture */}
-                        <div className="flex items-center space-x-6">
-                          <div className="relative">
-                            <div className="w-20 h-20 bg-gradient-to-r from-primary-500 to-primary-600 rounded-full flex items-center justify-center overflow-hidden">
-                              {previewUrl ||
-                              (profilePicture &&
-                                typeof profilePicture === "string") ? (
-                                <img
-                                  src={
-                                    previewUrl ||
-                                    (typeof profilePicture === "string"
-                                      ? profilePicture
-                                      : "")
-                                  }
-                                  alt="Profile"
-                                  className="w-full h-full object-cover"
-                                />
-                              ) : (
-                                <span className="text-2xl font-bold text-white">
-                                  {(userProfile?.name || user?.name || "U")
-                                    .charAt(0)
-                                    .toUpperCase()}
-                                </span>
-                              )}
-                            </div>
-
-                            {/* Upload overlay */}
-                            <div className="absolute inset-0 bg-black bg-opacity-50 rounded-full flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity duration-200">
-                              <Camera className="w-6 h-6 text-white" />
-                            </div>
-                          </div>
-
-                          <div className="flex-1">
-                            <h4 className="text-lg font-semibold text-gray-900">
-                              {userProfile?.name || user?.name}
-                            </h4>
-                            <p className="text-sm text-gray-600">
-                              {userPlan?.name || "Investment Plan"}
-                            </p>
-
-                            <div className="flex items-center space-x-3 mt-2">
-                              <input
-                                ref={fileInputRef}
-                                type="file"
-                                accept="image/*"
-                                onChange={handleFileSelect}
-                                className="hidden"
-                              />
-
-                              <button
-                                onClick={() => fileInputRef.current?.click()}
-                                className="text-sm text-primary-600 hover:text-primary-700 flex items-center"
-                              >
-                                <Upload className="w-4 h-4 mr-1" />
-                                {previewUrl ? "Change Photo" : "Upload Photo"}
-                              </button>
-
-                              {(previewUrl || profilePicture) && (
-                                <button
-                                  onClick={handleRemovePicture}
-                                  disabled={isUploading}
-                                  className="text-sm text-red-600 hover:text-red-700 flex items-center disabled:opacity-50"
-                                >
-                                  <Trash2 className="w-4 h-4 mr-1" />
-                                  Remove
-                                </button>
-                              )}
-                            </div>
-
-                            {/* Upload/Remove buttons */}
-                            {previewUrl && (
-                              <div className="flex items-center space-x-2 mt-2">
-                                <button
-                                  onClick={handleUploadPicture}
-                                  disabled={isUploading}
-                                  className="btn-primary px-3 py-1 text-xs disabled:opacity-50"
-                                >
-                                  {isUploading ? (
-                                    <LoadingSpinner size="sm" />
-                                  ) : (
-                                    <>
-                                      <Check className="w-3 h-3 mr-1" />
-                                      Save
-                                    </>
-                                  )}
-                                </button>
-                                <button
-                                  onClick={() => {
-                                    setPreviewUrl(null);
-                                    setProfilePicture(
-                                      userProfile?.profilePicture || null
-                                    );
-                                    if (fileInputRef.current) {
-                                      fileInputRef.current.value = "";
-                                    }
-                                  }}
-                                  className="btn-secondary px-3 py-1 text-xs"
-                                >
-                                  <X className="w-3 h-3 mr-1" />
-                                  Cancel
-                                </button>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-
-                        {/* Form Fields */}
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                          <div>
-                            <label className="form-label">Display Name</label>
-                            {isEditing ? (
-                              <input
-                                name="name"
-                                type="text"
-                                className="input-field p-2"
-                                value={editData.name}
-                                onChange={handleEditChange}
-                              />
-                            ) : (
-                              <div className="form-input py-2 px-1 flex items-center">
-                                <User className="w-4 h-4 text-gray-50  mr-3" />
-                                {userProfile?.name || "Not provided"}
-                              </div>
-                            )}
-                          </div>
-
-                          <div>
-                            <label className="form-label">Phone Number</label>
-                            {isEditing ? (
-                              <input
-                                name="phone"
-                                type="tel"
-                                className="input-field p-2"
-                                value={editData.phone}
-                                onChange={handleEditChange}
-                                placeholder="Enter your phone number"
-                              />
-                            ) : (
-                              <ClickToCopy
-                                text={userProfile?.phone || ""}
-                                className="form-input py-2 px-1 bg-gray-50 flex items-center"
-                              >
-                                <Mail className="w-4 h-4 text-gray-400 mr-3" />
-                                <span>
-                                  {userProfile?.phone || "Not provided"}
-                                </span>
-                              </ClickToCopy>
-                            )}
-                          </div>
-
-                          <div>
-                            <label className="form-label ">Email Address</label>
-                            <div
-                              text={user?.email || ""}
-                              className="form-input py-2 px-1 bg-gray-50 flex items-center"
-                            >
-                              <Mail className="w-4 h-4 text-gray-400 mr-3" />
-                              <span>{user?.email || "Not provided"}</span>
-                            </div>
-                            <p className="text-xs text-gray-500 mt-1">
-                              Email cannot be changed
-                            </p>
-                          </div>
-
-                          <div>
-                            <label className="form-label">Member Since</label>
-                            <div className="form-input bg-gray-50 flex items-center">
-                              <Calendar className="w-4 h-4 text-gray-400 mr-3" />
-                              {joinDate}
-                            </div>
-                          </div>
-
-                          <div>
-                            <label className="form-label">Account Status</label>
-                            <div className="form-input  bg-gray-50 flex items-center">
-                              <Shield className="w-4 h-4  text-success-500 mr-3" />
-                              <span className="text-success-600 py-1 font-medium">
-                                {userProfile?.status === "active"
-                                  ? "Active"
-                                  : "Inactive"}
-                              </span>
-                            </div>
-                          </div>
-
-                          <div>
-                            <label className="form-label">Account Number</label>
-                            <div className="form-input bg-gray-50 flex items-center justify-between">
-                              <div className="flex items-center">
-                                <Hash className="w-4 h-4 text-gray-400 mr-3" />
-                                {userProfile?.accountNumber ? (
-                                  <span className="font-mono text-lg font-semibold">
-                                    {userProfile.accountNumber}
-                                  </span>
-                                ) : (
-                                  <span className="text-gray-500 italic">
-                                    Not assigned
-                                  </span>
-                                )}
-                              </div>
-                              {userProfile?.accountNumber ? (
-                                <button
-                                  onClick={() =>
-                                    navigator.clipboard.writeText(
-                                      userProfile.accountNumber
-                                    )
-                                  }
-                                  className="text-primary-600 hover:text-primary-700 text-sm ml-2"
-                                  title="Copy account number"
-                                >
-                                  Copy
-                                </button>
-                              ) : (
-                                <span className="text-gray-500 text-sm">
-                                  Contact support
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Additional Personal Information */}
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                          <div>
-                            <label className="form-label">First Name</label>
-                            {isEditing ? (
-                              <input
-                                name="firstName"
-                                type="text"
-                                className="input-field p-2"
-                                value={editData.firstName}
-                                onChange={handleEditChange}
-                                placeholder="Enter your first name"
-                              />
-                            ) : (
-                              <div className="form-input py-2 px-1 bg-gray-50 flex items-center">
-                                <User className="w-4 h-4  text-gray-400 mr-3" />
-                                {userProfile?.personalInfo?.firstName ||
-                                  "Not provided"}
-                              </div>
-                            )}
-                          </div>
-
-                          <div>
-                            <label className="form-label">Last Name</label>
-                            {isEditing ? (
-                              <input
-                                name="lastName"
-                                type="text"
-                                className="input-field p-2"
-                                value={editData.lastName}
-                                onChange={handleEditChange}
-                                placeholder="Enter your last name"
-                              />
-                            ) : (
-                              <div className="form-input py-2 px-1 bg-gray-50 flex items-center">
-                                <User className="w-4 h-4 text-gray-400 mr-3" />
-                                {userProfile?.personalInfo?.lastName ||
-                                  "Not provided"}
-                              </div>
-                            )}
-                          </div>
-
-                          <div>
-                            <label className="form-label">Date of Birth</label>
-                            {isEditing ? (
-                              <input
-                                name="dateOfBirth"
-                                type="date"
-                                className="input-field p-2"
-                                value={editData.dateOfBirth}
-                                onChange={handleEditChange}
-                              />
-                            ) : (
-                              <div className="form-input py-2 px-1 bg-gray-50 flex items-center">
-                                <Calendar className="w-4 h-4 text-gray-400 mr-3" />
-                                {userProfile?.personalInfo?.dateOfBirth ||
-                                  "Not provided"}
-                              </div>
-                            )}
-                          </div>
-
-                          <div>
-                            <label className="form-label">Occupation</label>
-                            {isEditing ? (
-                              <input
-                                name="occupation"
-                                type="text"
-                                className="input-field p-2"
-                                value={editData.occupation}
-                                onChange={handleEditChange}
-                                placeholder="Enter your occupation"
-                              />
-                            ) : (
-                              <div className="form-input bg-gray-50 flex items-center">
-                                <Briefcase className="w-4 h-4 text-gray-400 mr-3" />
-                                {userProfile?.personalInfo?.occupation ||
-                                  "Not provided"}
-                              </div>
-                            )}
-                          </div>
-
-                          <div>
-                            <label className="form-label">Annual Income</label>
-                            {isEditing ? (
-                              <input
-                                name="annualIncome"
-                                type="number"
-                                className="input-field p-2"
-                                value={editData.annualIncome}
-                                onChange={handleEditChange}
-                                placeholder="Enter your annual income"
-                              />
-                            ) : (
-                              <div className="form-input bg-gray-50 flex items-center">
-                                <DollarSign className="w-4 h-4 text-gray-400 mr-3" />
-                                {userProfile?.personalInfo?.annualIncome
-                                  ? formatCurrency(
-                                      userProfile.personalInfo.annualIncome
-                                    )
-                                  : "Not provided"}
-                              </div>
-                            )}
-                          </div>
-
-                          <div>
-                            <label className="form-label">Address</label>
-                            {isEditing ? (
-                              <input
-                                name="address"
-                                type="text"
-                                className="input-field p-2"
-                                value={editData.address}
-                                onChange={handleEditChange}
-                                placeholder="Enter your address"
-                              />
-                            ) : (
-                              <div className="form-input bg-gray-50 flex items-center">
-                                <MapPin className="w-4 h-4 text-gray-400 mr-3" />
-                                {userProfile?.personalInfo?.address ||
-                                  "Not provided"}
-                              </div>
-                            )}
-                          </div>
-
-                          <div>
-                            <label className="form-label">City</label>
-                            {isEditing ? (
-                              <input
-                                name="city"
-                                type="text"
-                                className="input-field p-2"
-                                value={editData.city}
-                                onChange={handleEditChange}
-                                placeholder="Enter your city"
-                              />
-                            ) : (
-                              <div className="form-input bg-gray-50 flex items-center">
-                                <MapPin className="w-4 h-4 text-gray-400 mr-3" />
-                                {userProfile?.personalInfo?.city ||
-                                  "Not provided"}
-                              </div>
-                            )}
-                          </div>
-
-                          <div>
-                            <label className="form-label">State</label>
-                            {isEditing ? (
-                              <input
-                                name="state"
-                                type="text"
-                                className="input-field p-2"
-                                value={editData.state}
-                                onChange={handleEditChange}
-                                placeholder="Enter your state"
-                              />
-                            ) : (
-                              <div className="form-input bg-gray-50 flex items-center">
-                                <MapPin className="w-4 h-4 text-gray-400 mr-3" />
-                                {userProfile?.personalInfo?.state ||
-                                  "Not provided"}
-                              </div>
-                            )}
-                          </div>
-
-                          <div>
-                            <label className="form-label">ZIP Code</label>
-                            {isEditing ? (
-                              <input
-                                name="zipCode"
-                                type="text"
-                                className="input-field p-2"
-                                value={editData.zipCode}
-                                onChange={handleEditChange}
-                                placeholder="Enter your ZIP code"
-                              />
-                            ) : (
-                              <div className="form-input bg-gray-50 flex items-center">
-                                <Hash className="w-4 h-4 text-gray-400 mr-3" />
-                                {userProfile?.personalInfo?.zipCode ||
-                                  "Not provided"}
-                              </div>
-                            )}
-                          </div>
-
-                          <div>
-                            <label className="form-label">Country</label>
-                            {isEditing ? (
-                              <select
-                                name="country"
-                                className="input-field p-2"
-                                value={editData.country}
-                                onChange={handleEditChange}
-                              >
-                                <option value="">Select country</option>
-                                <option value="US">United States</option>
-                                <option value="CA">Canada</option>
-                                <option value="UK">United Kingdom</option>
-                                <option value="AU">Australia</option>
-                                <option value="DE">Germany</option>
-                                <option value="FR">France</option>
-                                <option value="IT">Italy</option>
-                                <option value="ES">Spain</option>
-                                <option value="NL">Netherlands</option>
-                                <option value="SE">Sweden</option>
-                                <option value="NO">Norway</option>
-                                <option value="DK">Denmark</option>
-                                <option value="FI">Finland</option>
-                                <option value="CH">Switzerland</option>
-                                <option value="AT">Austria</option>
-                                <option value="BE">Belgium</option>
-                                <option value="IE">Ireland</option>
-                                <option value="PT">Portugal</option>
-                                <option value="GR">Greece</option>
-                                <option value="LU">Luxembourg</option>
-                                <option value="MT">Malta</option>
-                                <option value="CY">Cyprus</option>
-                                <option value="EE">Estonia</option>
-                                <option value="LV">Latvia</option>
-                                <option value="LT">Lithuania</option>
-                                <option value="PL">Poland</option>
-                                <option value="CZ">Czech Republic</option>
-                                <option value="SK">Slovakia</option>
-                                <option value="SI">Slovenia</option>
-                                <option value="HU">Hungary</option>
-                                <option value="RO">Romania</option>
-                                <option value="BG">Bulgaria</option>
-                                <option value="HR">Croatia</option>
-                                <option value="Other">Other</option>
-                              </select>
-                            ) : (
-                              <div className="form-input bg-gray-50 flex items-center">
-                                <MapPin className="w-4 h-4 text-gray-400 mr-3" />
-                                {userProfile?.personalInfo?.country ||
-                                  "Not provided"}
-                              </div>
-                            )}
-                          </div>
-
-                          <div>
-                            <label className="form-label">
-                              Social Security Number
-                            </label>
-                            {isEditing ? (
-                              <div className="relative ">
-                                <input
-                                  name="ssn"
-                                  type={showSSN ? "text" : "password"}
-                                  className="form-input pr-10 "
-                                  value={editData.ssn}
-                                  onChange={handleEditChange}
-                                  placeholder="XXX-XX-XXXX"
-                                />
-                                <button
-                                  type="button"
-                                  onClick={() => setShowSSN(!showSSN)}
-                                  className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                                >
-                                  {showSSN ? (
-                                    <EyeOff className="h-4 w-4 text-gray-400" />
-                                  ) : (
-                                    <Eye className="h-4 w-4 text-gray-400" />
-                                  )}
-                                </button>
-                              </div>
-                            ) : (
-                              <div className="form-input bg-gray-50 flex items-center">
-                                <Shield className="w-4 h-4 text-gray-400 mr-3" />
-                                {userProfile?.personalInfo?.ssn
-                                  ? "•••-••-••••"
-                                  : "Not provided"}
-                              </div>
-                            )}
-                          </div>
-
-                          <div>
-                            <label className="form-label">ID Type</label>
-                            {isEditing ? (
-                              <select
-                                name="idType"
-                                className="input-field p-2"
-                                value={editData.idType}
-                                onChange={handleEditChange}
-                              >
-                                <option value="">Select ID type</option>
-                                <option value="drivers-license">
-                                  Driver's License
-                                </option>
-                                <option value="passport">Passport</option>
-                                <option value="state-id">State ID</option>
-                                <option value="national-id">National ID</option>
-                              </select>
-                            ) : (
-                              <div className="form-input bg-gray-50 flex items-center">
-                                <FileText className="w-4 h-4 text-gray-400 mr-3" />
-                                {userProfile?.personalInfo?.idType ||
-                                  "Not provided"}
-                              </div>
-                            )}
-                          </div>
-
-                          <div>
-                            <label className="form-label">Secret Phrase</label>
-                            {isEditing ? (
-                              <div className="relative y65u65ttttttttttttttt">
-                                <input
-                                  name="secretPhrase"
-                                  type={showSecretPhrase ? "text" : "password"}
-                                  className="form-input pr-10"
-                                  value={editData.secretPhrase}
-                                  onChange={handleEditChange}
-                                  placeholder="Enter your secret phrase"
-                                />
-                                <button
-                                  type="button"
-                                  onClick={() =>
-                                    setShowSecretPhrase(!showSecretPhrase)
-                                  }
-                                  className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                                >
-                                  {showSecretPhrase ? (
-                                    <EyeOff className="h-4 w-4 text-gray-400" />
-                                  ) : (
-                                    <Eye className="h-4 w-4 text-gray-400" />
-                                  )}
-                                </button>
-                              </div>
-                            ) : (
-                              <div className="form-input bg-gray-50 flex items-center">
-                                <Key className="w-4 h-4 text-gray-400 mr-3" />
-                                {userProfile?.secretPhrase
-                                  ? "••••••"
-                                  : "Not provided"}
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      </div>
                     </div>
-                  </motion.div>
 
-                  {/* Investment Plan & Stats */}
-                  <motion.div
-                    initial={{ opacity: 0, x: 20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ duration: 0.6, delay: 0.2 }}
-                    className="space-y-6"
-                  >
-                    {/* Current Plan */}
-                    <div className="card">
-                      <div className="card-header">
-                        <div className="flex items-center space-x-3">
-                          <div className="w-10 h-10 bg-success-100 rounded-lg flex items-center justify-center">
-                            <TrendingUp className="w-5 h-5 text-success-600" />
-                          </div>
-                          <div>
-                            <h3 className="text-lg font-semibold text-gray-900">
-                              Investment Plan
-                            </h3>
-                            <p className="text-sm text-gray-600">
-                              Current subscription
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="card-body">
+                    {/* Side cards */}
+                    <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+                      {/* Investment Plan */}
+                      <div style={{ ...S.glassCard, padding: "24px" }}>
+                        <SectionHeader icon={TrendingUp} title="Investment Plan" subtitle="Current subscription" />
                         {userPlan ? (
-                          <div>
-                            <div className="text-center mb-4">
-                              <h4 className="text-xl font-bold text-gray-900">
-                                {userPlan.name}
-                              </h4>
-                              <div className="text-3xl font-bold text-primary-600 mt-2">
-                                {userPlan.interestRate}%
+                          <div style={{ textAlign: "center" }}>
+                            <div style={{ fontWeight: 800, fontSize: "1.2rem", color: "#f0f0fa" }}>{userPlan.name}</div>
+                            <div style={{ fontSize: "2.5rem", fontWeight: 900, ...S.accentGradientText, margin: "8px 0 4px" }}>{userPlan.interestRate}%</div>
+                            <div style={{ fontSize: "0.75rem", color: "#7070a0", marginBottom: "16px" }}>Monthly Interest Rate</div>
+                            {userPlan.features.map((f: any, i: number) => (
+                              <div key={i} style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "0.82rem", color: "#9090b0", marginBottom: "6px" }}>
+                                <div style={{ width: "6px", height: "6px", borderRadius: "50%", background: "#10b981", flexShrink: 0 }} />
+                                {f}
                               </div>
-                              <p className="text-sm text-gray-600">
-                                Monthly Interest Rate
-                              </p>
-                            </div>
-                            <div className="space-y-3">
-                              {userPlan.features.map(
-                                (feature: any, index: number) => (
-                                  <div
-                                    key={index}
-                                    className="flex items-center text-sm text-gray-600"
-                                  >
-                                    <div className="w-1.5 h-1.5 bg-success-500 rounded-full mr-3"></div>
-                                    {feature}
-                                  </div>
-                                )
-                              )}
-                            </div>
-                            <div className="mt-4 pt-4 border-t border-gray-200">
-                              <div className="text-center">
-                                <button className="btn-primary w-full py-2 text-sm">
-                                  Upgrade Plan
-                                </button>
-                              </div>
-                            </div>
+                            ))}
+                            <button style={{ ...S.btnPrimary, width: "100%", justifyContent: "center", marginTop: "16px" }}>Upgrade Plan</button>
                           </div>
                         ) : (
-                          <p className="text-gray-600 text-center">
-                            No plan selected
-                          </p>
+                          <p style={{ textAlign: "center", color: "#7070a0", fontSize: "0.85rem" }}>No plan selected</p>
                         )}
                       </div>
-                    </div>
 
-                    {/* Quick Stats */}
-                    <div className="card">
-                      <div className="card-header">
-                        <h3 className="text-lg font-semibold text-gray-900">
-                          Portfolio Summary
-                        </h3>
-                      </div>
-                      <div className="card-body space-y-4">
-                        <div className="flex items-center justify-between py-2">
-                          <span className="text-sm text-gray-600">
-                            Total Invested
-                          </span>
-                          <span className="font-semibold text-gray-900">
-                            {formatCurrency(totalInvested)}
-                          </span>
-                        </div>
-                        <div className="flex items-center justify-between py-2">
-                          <span className="text-sm text-gray-600">
-                            Active Investments
-                          </span>
-                          <span className="font-semibold text-gray-900">
-                            {activeInvestments}
-                          </span>
-                        </div>
-                        <div className="flex items-center justify-between py-2">
-                          <span className="text-sm text-gray-600">
-                            Account Type
-                          </span>
-                          <span className="font-semibold text-primary-600">
-                            {userPlan?.name || "Standard"}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  </motion.div>
-                </div>
-              )}
-
-              {/* Notification Settings */}
-              {activeTab === "notifications" && (
-                <div className="space-y-6">
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                      Notification Preferences
-                    </h3>
-
-                    <div className="space-y-4">
-                      <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
-                        <div>
-                          <h4 className="font-medium text-gray-900">
-                            Email Notifications
-                          </h4>
-                          <p className="text-sm text-gray-600">
-                            Receive notifications via email
-                          </p>
-                        </div>
-                        <label className="relative inline-flex items-center cursor-pointer">
-                          <input
-                            type="checkbox"
-                            checked={notifications.email}
-                            onChange={(e) =>
-                              handleNotificationChange(
-                                "email",
-                                e.target.checked
-                              )
-                            }
-                            className="sr-only peer"
-                          />
-                          <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-600"></div>
-                        </label>
-                      </div>
-
-                      <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
-                        <div>
-                          <h4 className="font-medium text-gray-900">
-                            Push Notifications
-                          </h4>
-                          <p className="text-sm text-gray-600">
-                            Receive push notifications in browser
-                          </p>
-                        </div>
-                        <label className="relative inline-flex items-center cursor-pointer">
-                          <input
-                            type="checkbox"
-                            checked={notifications.push}
-                            onChange={(e) =>
-                              handleNotificationChange("push", e.target.checked)
-                            }
-                            className="sr-only peer"
-                          />
-                          <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-600"></div>
-                        </label>
-                      </div>
-
-                      <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
-                        <div>
-                          <h4 className="font-medium text-gray-900">
-                            SMS Notifications
-                          </h4>
-                          <p className="text-sm text-gray-600">
-                            Receive notifications via SMS
-                          </p>
-                        </div>
-                        <label className="relative inline-flex items-center cursor-pointer">
-                          <input
-                            type="checkbox"
-                            checked={notifications.sms}
-                            onChange={(e) =>
-                              handleNotificationChange("sms", e.target.checked)
-                            }
-                            className="sr-only peer"
-                          />
-                          <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-600"></div>
-                        </label>
+                      {/* Portfolio Summary */}
+                      <div style={{ ...S.glassCard, padding: "24px" }}>
+                        <h3 style={{ margin: "0 0 20px", fontSize: "0.95rem", fontWeight: 700, color: "#f0f0fa" }}>Portfolio Summary</h3>
+                        {[
+                          { label: "Total Invested", value: formatCurrency(totalInvested), color: "#a78bfa" },
+                          { label: "Active Investments", value: activeInvestments, color: "#34d399" },
+                          { label: "Account Type", value: userPlan?.name || "Standard", color: "#f472b6" },
+                        ].map(item => (
+                          <div key={item.label} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 0", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
+                            <span style={{ fontSize: "0.82rem", color: "#7070a0" }}>{item.label}</span>
+                            <span style={{ fontWeight: 700, fontSize: "0.9rem", color: item.color }}>{item.value}</span>
+                          </div>
+                        ))}
                       </div>
                     </div>
                   </div>
-                </div>
-              )}
+                )}
 
-              {/* Security Settings */}
-              {activeTab === "security" && (
-                <div className="space-y-6">
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                      Security Settings
-                    </h3>
-
-                    <div className="space-y-4">
-                      <div className="p-4 border border-gray-200 rounded-lg">
-                        <h4 className="font-medium text-gray-900 mb-2">
-                          Two-Factor Authentication
-                        </h4>
-                        <p className="text-sm text-gray-600 mb-4">
-                          Add an extra layer of security to your account
-                        </p>
-                        <button className="btn-secondary px-4 py-2">
-                          Enable 2FA
-                        </button>
-                      </div>
-
-                      <div className="p-4 border border-gray-200 rounded-lg">
-                        <h4 className="font-medium text-gray-900 mb-2">
-                          Change Password
-                        </h4>
-                        <p className="text-sm text-gray-600 mb-4">
-                          Update your account password
-                        </p>
-                        <button
-                          onClick={() => setShowPasswordModal(true)}
-                          className="btn-secondary px-4 py-2"
-                        >
-                          Change Password
-                        </button>
-                      </div>
-
-                      <div className="p-4 border border-gray-200 rounded-lg">
-                        <h4 className="font-medium text-gray-900 mb-2">
-                          Login History
-                        </h4>
-                        <p className="text-sm text-gray-600 mb-4">
-                          View your recent login activity
-                        </p>
-                        <button
-                          onClick={() => setShowLoginHistoryModal(true)}
-                          className="btn-secondary px-4 py-2"
-                        >
-                          View History
-                        </button>
-                      </div>
+                {/* ════════════ NOTIFICATIONS ════════════ */}
+                {activeTab === "notifications" && (
+                  <div style={{ ...S.glassCard, padding: "28px" }}>
+                    <SectionHeader icon={Bell} title="Notifications" subtitle="Choose how you want to be notified" />
+                    <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                      <SettingsRow icon={Mail} title="Email Notifications" description="Receive updates and alerts via email"
+                        right={<Toggle checked={notifications.email} onChange={v => setNotifications(p => ({ ...p, email: v }))} />} />
+                      <SettingsRow icon={Bell} title="Push Notifications" description="Receive push notifications in browser"
+                        right={<Toggle checked={notifications.push} onChange={v => setNotifications(p => ({ ...p, push: v }))} />} />
+                      <SettingsRow icon={Hash} title="SMS Notifications" description="Get text alerts sent to your phone"
+                        right={<Toggle checked={notifications.sms} onChange={v => setNotifications(p => ({ ...p, sms: v }))} />} />
                     </div>
                   </div>
-                </div>
-              )}
+                )}
 
-              {/* Payment Methods */}
-              {activeTab === "payment" && (
-                <div className="space-y-6">
-                  <div>
-                    <div className="flex items-center justify-between mb-6">
-                      <h3 className=" text-base md:text-lg font-semibold text-gray-900">
-                        Payment Methods
-                      </h3>
-                      <button
-                        onClick={() => {
-                          setEditingPayment(null);
-                          setNewPaymentMethod({
-                            type: "paypal",
-                            name: "",
-                            email: "",
-                            username: "",
-                            phoneNumber: "",
-                            address: "",
-                          });
-                          setShowAddPaymentModal(true);
-                        }}
-                        className="btn-primary px-4 py-2 text-sm md:text-base"
-                      >
-                        <Plus className="w-4 h-4  md:mr-2 " />
-                        Add Payment Method
-                      </button>
+                {/* ════════════ SECURITY ════════════ */}
+                {activeTab === "security" && (
+                  <div style={{ ...S.glassCard, padding: "28px" }}>
+                    <SectionHeader icon={Shield} title="Security" subtitle="Protect your account" />
+                    <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                      {[
+                        { icon: Shield, title: "Two-Factor Authentication", desc: "Add an extra layer of security to your account", btnLabel: "Enable 2FA", onClick: () => {} },
+                        { icon: Key, title: "Change Password", desc: "Update your account password regularly", btnLabel: "Change Password", onClick: () => setShowPasswordModal(true) },
+                        { icon: Calendar, title: "Login History", desc: "Review your recent login activity", btnLabel: "View History", onClick: () => setShowLoginHistoryModal(true) },
+                      ].map(item => (
+                        <SettingsRow key={item.title} icon={item.icon} title={item.title} description={item.desc}
+                          right={
+                            <button style={{ ...S.btnSecondary, fontSize: "0.8rem", whiteSpace: "nowrap" }} onClick={item.onClick}
+                              onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,0.1)")}
+                              onMouseLeave={e => (e.currentTarget.style.background = "rgba(255,255,255,0.07)")}>
+                              {item.btnLabel}
+                            </button>
+                          }
+                        />
+                      ))}
                     </div>
+                  </div>
+                )}
 
-                    {/* Verification Notice */}
-                    <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                      <div className="flex items-start">
-                        <div className="flex-shrink-0">
-                          <Shield className="w-5 h-5 text-blue-600 mt-0.5" />
-                        </div>
-                        <div className="ml-3">
-                          <h4 className="text-sm font-medium text-blue-800">
-                            Verification Required
-                          </h4>
-                          <p className="text-sm text-blue-700 mt-1">
-                            Payment method details must match your account
-                            information exactly. All payment methods will be
-                            pending verification before they can be approved for
-                            withdrawals. Please ensure all information is
-                            accurate and up-to-date.
-                          </p>
-                        </div>
+                {/* ════════════ PAYMENT METHODS ════════════ */}
+                {activeTab === "payment" && (
+                  <div style={{ ...S.glassCard, padding: "28px" }}>
+                    <SectionHeader icon={CreditCard} title="Payment Methods" subtitle="Manage your withdrawal accounts"
+                      action={
+                        <button style={S.btnPrimary} onClick={() => { setEditingPayment(null); setNewPaymentMethod({ type: "paypal", name: "", email: "", username: "", phoneNumber: "", address: "" }); setShowAddPaymentModal(true); }}>
+                          <Plus size={15} /> Add Method
+                        </button>
+                      }
+                    />
+
+                    {/* Verification notice */}
+                    <div style={{ background: "rgba(59,130,246,0.08)", border: "1px solid rgba(59,130,246,0.2)", borderRadius: "14px", padding: "16px 18px", marginBottom: "20px", display: "flex", gap: "12px" }}>
+                      <Shield size={18} style={{ color: "#60a5fa", flexShrink: 0, marginTop: "2px" }} />
+                      <div>
+                        <div style={{ fontWeight: 700, fontSize: "0.82rem", color: "#93c5fd", marginBottom: "4px" }}>Verification Required</div>
+                        <div style={{ fontSize: "0.78rem", color: "#6090c0", lineHeight: 1.5 }}>Payment details must match your account info exactly. All methods are pending verification before approval for withdrawals.</div>
                       </div>
                     </div>
 
-                    <div className="space-y-4">
-                      {paymentMethods.map((method) => (
-                        <div
-                          key={method.$id}
-                          className="p-4 border border-gray-200 rounded-lg"
-                        >
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center space-x-4">
-                              <div className="w-12 h-12 bg-primary-100 rounded-lg flex items-center justify-center">
-                                <CreditCard className="w-6 h-6 text-primary-600" />
-                              </div>
-                              <div>
-                                <h4 className="font-medium text-gray-900">
-                                  {method.name}
-                                </h4>
-                                <ClickToCopy
-                                  text={method.accountNumber}
-                                  copyMessage="Account number copied to clipboard!"
-                                >
-                                  <p className="text-sm text-gray-600">
-                                    {method.accountNumber}
-                                  </p>
-                                </ClickToCopy>
-                                {method.email && (
-                                  <ClickToCopy
-                                    text={method.email}
-                                    copyMessage="Email copied to clipboard!"
-                                  >
-                                    <p className="text-sm text-gray-500">
-                                      {method.email}
-                                    </p>
-                                  </ClickToCopy>
+                    <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                      {paymentMethods.map(method => (
+                        <div key={method.$id} style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "16px", padding: "18px 20px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "16px" }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: "14px", flex: 1, minWidth: 0 }}>
+                            <div style={{ width: "46px", height: "46px", borderRadius: "14px", background: "linear-gradient(135deg,rgba(139,92,246,0.2),rgba(236,72,153,0.2))", border: "1px solid rgba(139,92,246,0.25)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                              <CreditCard size={20} style={{ color: "#a78bfa" }} />
+                            </div>
+                            <div style={{ minWidth: 0 }}>
+                              <div style={{ fontWeight: 700, fontSize: "0.9rem", color: "#f0f0fa" }}>{method.name}</div>
+                              <ClickToCopy text={method.accountNumber} copyMessage="Copied!">
+                                <div style={{ fontSize: "0.78rem", color: "#7070a0", fontFamily: "monospace" }}>{method.accountNumber}</div>
+                              </ClickToCopy>
+                              {method.email && <div style={{ fontSize: "0.75rem", color: "#606080" }}>{method.email}</div>}
+                              <div style={{ display: "flex", gap: "6px", marginTop: "6px", flexWrap: "wrap" }}>
+                                <Badge status={method.status} />
+                                {method.isDefault && (
+                                  <span style={{ background: "rgba(139,92,246,0.15)", color: "#a78bfa", borderRadius: "8px", padding: "3px 10px", fontSize: "0.72rem", fontWeight: 700, letterSpacing: "0.05em", textTransform: "uppercase" }}>Default</span>
                                 )}
-                                <div className="flex items-center space-x-2 mt-1">
-                                  <span
-                                    className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                                      method.status === "verified"
-                                        ? "bg-green-100 text-green-800"
-                                        : method.status === "rejected"
-                                        ? "bg-red-100 text-red-800"
-                                        : "bg-yellow-100 text-yellow-800"
-                                    }`}
-                                  >
-                                    {method.status === "verified"
-                                      ? "Verified"
-                                      : method.status === "rejected"
-                                      ? "Rejected"
-                                      : "Pending"}
-                                  </span>
-                                  {method.isDefault && (
-                                    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                      Default
-                                    </span>
-                                  )}
-                                </div>
                               </div>
                             </div>
-                            <div className="flex items-center space-x-2">
-                              {!method.isDefault && (
-                                <button
-                                  onClick={() =>
-                                    handleSetDefaultPayment(method.$id)
-                                  }
-                                  className="text-sm text-primary-600 hover:text-primary-700"
-                                >
-                                  Set as Default
-                                </button>
-                              )}
-                              <button
-                                onClick={() => handleEditPaymentMethod(method)}
-                                className="p-2 text-gray-400 hover:text-gray-600"
-                              >
-                                <Edit className="w-4 h-4" />
-                              </button>
-                              <button
-                                onClick={() =>
-                                  handleDeletePaymentMethod(method.$id)
-                                }
-                                className="p-2 text-red-400 hover:text-red-600"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
-                            </div>
+                          </div>
+                          <div style={{ display: "flex", alignItems: "center", gap: "6px", flexShrink: 0 }}>
+                            {!method.isDefault && (
+                              <button onClick={() => setDefaultPaymentMethod(method.$id)} style={{ fontSize: "0.75rem", color: "#a78bfa", background: "none", border: "none", cursor: "pointer", whiteSpace: "nowrap" }}>Set Default</button>
+                            )}
+                            <button onClick={() => { setEditingPayment(method); setNewPaymentMethod({ type: method.type, name: "", email: method.email || "", username: method.username || "", phoneNumber: method.phoneNumber || "", address: method.address || "" }); setShowAddPaymentModal(true); }}
+                              style={{ width: "34px", height: "34px", borderRadius: "10px", background: "rgba(255,255,255,0.06)", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: "#9090b0" }}>
+                              <Edit size={15} />
+                            </button>
+                            <button onClick={() => handleDeletePaymentMethod(method.$id)}
+                              style={{ width: "34px", height: "34px", borderRadius: "10px", background: "rgba(239,68,68,0.1)", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: "#f87171" }}>
+                              <Trash2 size={15} />
+                            </button>
                           </div>
                         </div>
                       ))}
 
                       {paymentMethods.length === 0 && (
-                        <div className="text-center py-12">
-                          <CreditCard className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                          <h3 className="text-lg font-medium text-gray-900 mb-2">
-                            No payment methods
-                          </h3>
-                          <p className="text-gray-600 mb-4">
-                            Add a payment method to enable withdrawals
-                          </p>
-                          <button
-                            onClick={() => setShowAddPaymentModal(true)}
-                            className="btn-primary px-4 py-2"
-                          >
-                            <Plus className="w-4 h-4 mr-2" />
-                            Add Payment Method
-                          </button>
+                        <div style={{ textAlign: "center", padding: "48px 24px" }}>
+                          <div style={{ width: "64px", height: "64px", borderRadius: "20px", background: "rgba(139,92,246,0.1)", border: "1px solid rgba(139,92,246,0.2)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}>
+                            <CreditCard size={28} style={{ color: "#7070a0" }} />
+                          </div>
+                          <div style={{ fontWeight: 700, fontSize: "1rem", color: "#f0f0fa", marginBottom: "6px" }}>No payment methods</div>
+                          <div style={{ fontSize: "0.82rem", color: "#7070a0", marginBottom: "20px" }}>Add a payment method to enable withdrawals</div>
+                          <button style={S.btnPrimary} onClick={() => setShowAddPaymentModal(true)}><Plus size={15} /> Add Payment Method</button>
                         </div>
                       )}
                     </div>
                   </div>
-                </div>
-              )}
+                )}
 
-              {/* Preferences */}
-              {/* Referrals */}
-              {activeTab === "referrals" && <UserReferralPanel />}
+                {/* ════════════ REFERRALS ════════════ */}
+                {activeTab === "referrals" && (
+                  <div style={{ ...S.glassCard, padding: "28px" }}>
+                    <UserReferralPanel />
+                  </div>
+                )}
 
-              {/* Preferences */}
-              {activeTab === "preferences" && (
-                <div className="space-y-6">
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                      Preferences
-                    </h3>
-
-                    <div className="space-y-4">
-                      <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
-                        <div>
-                          <h4 className="font-medium text-gray-900">
-                            Dark Mode
-                          </h4>
-                          <p className="text-sm text-gray-600">
-                            Switch to dark theme
-                          </p>
-                        </div>
-                        <label className="relative inline-flex items-center cursor-pointer">
-                          <input
-                            type="checkbox"
-                            checked={isDarkMode}
-                            onChange={(e) =>
-                              handleDarkModeToggle(e.target.checked)
-                            }
-                            className="sr-only peer"
-                          />
-                          <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-600"></div>
-                        </label>
-                      </div>
-
-                      <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
-                        <div>
-                          <h4 className="font-medium text-gray-900">
-                            Show Balance
-                          </h4>
-                          <p className="text-sm text-gray-600">
-                            Display account balance in dashboard
-                          </p>
-                        </div>
-                        <label className="relative inline-flex items-center cursor-pointer">
-                          <input
-                            type="checkbox"
-                            checked={showBalance}
-                            onChange={(e) =>
-                              handleShowBalanceToggle(e.target.checked)
-                            }
-                            className="sr-only peer"
-                          />
-                          <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-600"></div>
-                        </label>
-                      </div>
-
-                      <div className="p-4 border border-gray-200 rounded-lg">
-                        <h4 className="font-medium text-gray-900 mb-2">
-                          Currency
-                        </h4>
-                        <p className="text-sm text-gray-600 mb-4">
-                          Select your preferred currency
-                        </p>
-                        <select
-                          className="form-input max-w-xs"
-                          value={preferredCurrency}
-                          onChange={(e) => handleCurrencyChange(e.target.value)}
-                        >
-                          <option value="USD">USD - US Dollar</option>
-                          <option value="EUR">EUR - Euro</option>
-                          <option value="GBP">GBP - British Pound</option>
-                          <option value="CAD">CAD - Canadian Dollar</option>
-                          <option value="AUD">AUD - Australian Dollar</option>
-                          <option value="JPY">JPY - Japanese Yen</option>
-                          <option value="CHF">CHF - Swiss Franc</option>
-                          <option value="CNY">CNY - Chinese Yuan</option>
+                {/* ════════════ PREFERENCES ════════════ */}
+                {activeTab === "preferences" && (
+                  <div style={{ ...S.glassCard, padding: "28px" }}>
+                    <SectionHeader icon={Globe} title="Preferences" subtitle="Customize your experience" />
+                    <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                      <SettingsRow icon={Globe} title="Dark Mode" description="Switch to a darker interface theme"
+                        right={<Toggle checked={isDarkMode} onChange={async v => { setIsDarkMode(v); v ? document.documentElement.classList.add("dark") : document.documentElement.classList.remove("dark"); try { await updateUserProfile({ preferences: { ...userProfile?.preferences, darkMode: v } } as any); } catch {} }} />} />
+                      <SettingsRow icon={Eye} title="Show Balance" description="Display account balance on dashboard"
+                        right={<Toggle checked={showBalance} onChange={async v => { setShowBalance(v); try { await updateUserProfile({ preferences: { ...userProfile?.preferences, showBalance: v } } as any); } catch {} }} />} />
+                      <div style={{ padding: "18px 20px", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: "16px" }}>
+                        <div style={{ fontWeight: 600, fontSize: "0.9rem", color: "#e2e2f0", marginBottom: "4px" }}>Currency</div>
+                        <div style={{ fontSize: "0.78rem", color: "#7070a0", marginBottom: "12px" }}>Select your preferred display currency</div>
+                        <select style={{ ...S.select, maxWidth: "280px" }} value={preferredCurrency}
+                          onChange={async e => { setPreferredCurrency(e.target.value); try { await updateUserProfile({ preferences: { ...userProfile?.preferences, currency: e.target.value } } as any); } catch {} }}>
+                          <option value="USD">USD — US Dollar</option>
+                          <option value="EUR">EUR — Euro</option>
+                          <option value="GBP">GBP — British Pound</option>
+                          <option value="CAD">CAD — Canadian Dollar</option>
+                          <option value="AUD">AUD — Australian Dollar</option>
+                          <option value="JPY">JPY — Japanese Yen</option>
+                          <option value="CHF">CHF — Swiss Franc</option>
+                          <option value="CNY">CNY — Chinese Yuan</option>
                         </select>
                       </div>
                     </div>
                   </div>
-                </div>
-              )}
-            </div>
-          </div>
-        </motion.div>
+                )}
+
+              </motion.div>
+            </AnimatePresence>
+          </motion.div>
+        </div>
       </div>
 
-      {/* Password Change Modal */}
-      <PasswordChangeModal
-        isOpen={showPasswordModal}
-        onClose={() => setShowPasswordModal(false)}
-        onChangePassword={changePassword}
-      />
+      {/* ── Modals ── */}
+      <PasswordChangeModal isOpen={showPasswordModal} onClose={() => setShowPasswordModal(false)} onChangePassword={changePassword} />
+      <LoginHistoryModal isOpen={showLoginHistoryModal} onClose={() => setShowLoginHistoryModal(false)} onGetLoginHistory={getLoginHistory} onTerminateSession={terminateSession} onTerminateAllOtherSessions={terminateAllOtherSessions} />
 
-      {/* Login History Modal */}
-      <LoginHistoryModal
-        isOpen={showLoginHistoryModal}
-        onClose={() => setShowLoginHistoryModal(false)}
-        onGetLoginHistory={getLoginHistory}
-        onTerminateSession={terminateSession}
-        onTerminateAllOtherSessions={terminateAllOtherSessions}
-      />
-
-      {/* Add/Edit Payment Method Modal */}
-      {showAddPaymentModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-900">
-                {editingPayment ? "Edit Payment Method" : "Add Payment Method"}
-              </h3>
-              <button
-                onClick={() => setShowAddPaymentModal(false)}
-                className="text-gray-400 hover:text-gray-600"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <div className="space-y-4">
-              {/* Verification Notice in Modal */}
-              <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg">
-                <div className="flex items-start">
-                  <div className="flex-shrink-0">
-                    <Shield className="w-4 h-4 text-amber-600 mt-0.5" />
-                  </div>
-                  <div className="ml-2">
-                    <p className="text-xs text-amber-800">
-                      <strong>Important:</strong> Payment details must match
-                      your account information. All methods require verification
-                      before approval.
-                    </p>
-                  </div>
-                </div>
+      {/* ── Add/Edit Payment Modal ── */}
+      <AnimatePresence>
+        {showAddPaymentModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.75)", backdropFilter: "blur(8px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 50, padding: "20px" }}
+          >
+            <motion.div
+              initial={{ scale: 0.92, y: 24 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.92, y: 24 }}
+              style={{ background: "#111128", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "24px", padding: "28px", width: "100%", maxWidth: "440px", maxHeight: "90vh", overflowY: "auto" }}
+            >
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "24px" }}>
+                <h3 style={{ margin: 0, fontSize: "1.1rem", fontWeight: 800, ...S.accentGradientText }}>
+                  {editingPayment ? "Edit Payment Method" : "Add Payment Method"}
+                </h3>
+                <button onClick={() => setShowAddPaymentModal(false)} style={{ width: "32px", height: "32px", borderRadius: "10px", background: "rgba(255,255,255,0.07)", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: "#9090b0" }}>
+                  <X size={16} />
+                </button>
               </div>
 
-              <div>
-                <label className="form-label">Payment Type</label>
-                <select
-                  value={newPaymentMethod.type}
-                  onChange={(e) =>
-                    setNewPaymentMethod((prev) => ({
-                      ...prev,
-                      type: e.target.value,
-                    }))
-                  }
-                  className="form-input"
-                >
-                  <option value="">Select Payment Method Type</option>
-                  {paymentMethodTypes
-                    .filter((type) => type.isActive)
-                    .sort((a, b) => a.sortOrder - b.sortOrder)
-                    .map((type) => (
-                      <option key={type.$id} value={type.type}>
-                        {type.name}
-                      </option>
-                    ))}
-                </select>
+              {/* Amber notice */}
+              <div style={{ background: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.2)", borderRadius: "12px", padding: "12px 14px", marginBottom: "20px", display: "flex", gap: "10px" }}>
+                <Shield size={16} style={{ color: "#fbbf24", flexShrink: 0, marginTop: "1px" }} />
+                <p style={{ margin: 0, fontSize: "0.75rem", color: "#d4a840", lineHeight: 1.5 }}>
+                  <strong>Important:</strong> Payment details must match your account. All methods require verification before approval.
+                </p>
               </div>
 
-              {newPaymentMethod.type === "paypal" && (
-                <>
-                  <div>
-                    <label className="form-label">Email Address</label>
-                    <input
-                      type="email"
-                      value={newPaymentMethod.email}
-                      onChange={(e) =>
-                        setNewPaymentMethod((prev) => ({
-                          ...prev,
-                          email: e.target.value,
-                        }))
-                      }
-                      className="form-input"
-                      placeholder="Enter PayPal email address"
-                    />
-                  </div>
-                  <div className="text-center text-gray-500 text-sm">OR</div>
-                  <div>
-                    <label className="form-label">Username</label>
-                    <input
-                      type="text"
-                      value={newPaymentMethod.username}
-                      onChange={(e) =>
-                        setNewPaymentMethod((prev) => ({
-                          ...prev,
-                          username: e.target.value,
-                        }))
-                      }
-                      className="form-input"
-                      placeholder="Enter PayPal username"
-                    />
-                  </div>
-                  <div className="text-center text-gray-500 text-sm">OR</div>
-                  <div>
-                    <label className="form-label ">Phone Number</label>
-                    <input
-                      type="tel"
-                      value={newPaymentMethod.phoneNumber}
-                      onChange={(e) =>
-                        setNewPaymentMethod((prev) => ({
-                          ...prev,
-                          phoneNumber: e.target.value,
-                        }))
-                      }
-                      className="form-input "
-                      placeholder="Enter phone number"
-                    />
-                  </div>
-                </>
-              )}
-
-              {newPaymentMethod.type === "venmo" && (
-                <>
-                  <div>
-                    <label className="form-label">Username</label>
-                    <input
-                      type="text"
-                      value={newPaymentMethod.username}
-                      onChange={(e) =>
-                        setNewPaymentMethod((prev) => ({
-                          ...prev,
-                          username: e.target.value,
-                        }))
-                      }
-                      className="form-input"
-                      placeholder="Enter Venmo username (without @)"
-                    />
-                  </div>
-                  <div className="text-center text-gray-500 text-sm">OR</div>
-                  <div>
-                    <label className="form-label">Email Address</label>
-                    <input
-                      type="email"
-                      value={newPaymentMethod.email}
-                      onChange={(e) =>
-                        setNewPaymentMethod((prev) => ({
-                          ...prev,
-                          email: e.target.value,
-                        }))
-                      }
-                      className="form-input"
-                      placeholder="Enter email address"
-                    />
-                  </div>
-                  <div className="text-center text-gray-500 text-sm">OR</div>
-                  <div>
-                    <label className="form-label">Phone Number</label>
-                    <input
-                      type="tel"
-                      value={newPaymentMethod.phoneNumber}
-                      onChange={(e) =>
-                        setNewPaymentMethod((prev) => ({
-                          ...prev,
-                          phoneNumber: e.target.value,
-                        }))
-                      }
-                      className="form-input"
-                      placeholder="Enter phone number"
-                    />
-                  </div>
-                </>
-              )}
-
-              {newPaymentMethod.type === "cashapp" && (
-                <>
-                  <div>
-                    <label className="form-label">Username</label>
-                    <input
-                      type="text"
-                      value={newPaymentMethod.username}
-                      onChange={(e) =>
-                        setNewPaymentMethod((prev) => ({
-                          ...prev,
-                          username: e.target.value,
-                        }))
-                      }
-                      className="form-input"
-                      placeholder="Enter Cash App username (without $)"
-                    />
-                  </div>
-                  <div className="text-center text-gray-500 text-sm">OR</div>
-                  <div>
-                    <label className="form-label">Phone Number</label>
-                    <input
-                      type="tel"
-                      value={newPaymentMethod.phoneNumber}
-                      onChange={(e) =>
-                        setNewPaymentMethod((prev) => ({
-                          ...prev,
-                          phoneNumber: e.target.value,
-                        }))
-                      }
-                      className="form-input"
-                      placeholder="Enter phone number"
-                    />
-                  </div>
-                </>
-              )}
-
-              {(newPaymentMethod.type === "usdt" ||
-                newPaymentMethod.type === "ethereum" ||
-                newPaymentMethod.type === "bitcoin") && (
+              <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
                 <div>
-                  <label className="form-label">
-                    {newPaymentMethod.type === "usdt"
-                      ? "USDT Address"
-                      : newPaymentMethod.type === "ethereum"
-                      ? "Ethereum Address"
-                      : "Bitcoin Address"}
-                  </label>
-                  <input
-                    type="text"
-                    value={newPaymentMethod.address}
-                    onChange={(e) =>
-                      setNewPaymentMethod((prev) => ({
-                        ...prev,
-                        address: e.target.value,
-                      }))
-                    }
-                    className="form-input"
-                    placeholder={`Enter ${newPaymentMethod.type} address`}
-                  />
-                  <p className="text-xs text-gray-500 mt-1">
-                    Make sure to use the correct network for{" "}
-                    {newPaymentMethod.type.toUpperCase()}.
-                    <span className="text-amber-600 font-medium">
-                      {" "}
-                      This address must be under your control and match your
-                      account verification.
-                    </span>
-                  </p>
+                  <label style={S.label}>Payment Type</label>
+                  <select style={S.select} value={newPaymentMethod.type} onChange={e => setNewPaymentMethod(p => ({ ...p, type: e.target.value }))}>
+                    <option value="">Select type</option>
+                    {paymentMethodTypes.filter(t => t.isActive).sort((a, b) => a.sortOrder - b.sortOrder).map(t => (
+                      <option key={t.$id} value={t.type}>{t.name}</option>
+                    ))}
+                  </select>
                 </div>
-              )}
 
-              <div className="flex space-x-3 pt-4">
-                <button
-                  onClick={() => setShowAddPaymentModal(false)}
-                  className="btn-secondary flex-1"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleAddPaymentMethod}
-                  className="btn-primary flex-1"
-                >
-                  {editingPayment ? "Update" : "Add"} Payment Method
-                </button>
+                {/* Dynamic fields */}
+                {["paypal", "venmo"].includes(newPaymentMethod.type) && <>
+                  {[
+                    { label: "Email Address", key: "email", type: "email", placeholder: `Enter ${newPaymentMethod.type} email` },
+                    { label: "Username", key: "username", type: "text", placeholder: `Enter ${newPaymentMethod.type} username` },
+                    { label: "Phone Number", key: "phoneNumber", type: "tel", placeholder: "Enter phone number" },
+                  ].map((f, i) => (
+                    <React.Fragment key={f.key}>
+                      {i > 0 && <div style={{ textAlign: "center", fontSize: "0.75rem", color: "#606080", letterSpacing: "0.1em" }}>— OR —</div>}
+                      <div>
+                        <label style={S.label}>{f.label}</label>
+                        <input type={f.type} style={S.input} value={(newPaymentMethod as any)[f.key]} placeholder={f.placeholder}
+                          onChange={e => setNewPaymentMethod(p => ({ ...p, [f.key]: e.target.value }))}
+                          onFocus={e => { e.target.style.borderColor = "rgba(139,92,246,0.6)"; e.target.style.boxShadow = "0 0 0 3px rgba(139,92,246,0.12)"; }}
+                          onBlur={e => { e.target.style.borderColor = "rgba(255,255,255,0.1)"; e.target.style.boxShadow = "none"; }} />
+                      </div>
+                    </React.Fragment>
+                  ))}
+                </>}
+
+                {newPaymentMethod.type === "cashapp" && <>
+                  {[
+                    { label: "Username (without $)", key: "username", placeholder: "cashtag" },
+                    { label: "Phone Number", key: "phoneNumber", placeholder: "Phone" },
+                  ].map((f, i) => (
+                    <React.Fragment key={f.key}>
+                      {i > 0 && <div style={{ textAlign: "center", fontSize: "0.75rem", color: "#606080" }}>— OR —</div>}
+                      <div>
+                        <label style={S.label}>{f.label}</label>
+                        <input style={S.input} value={(newPaymentMethod as any)[f.key]} placeholder={f.placeholder}
+                          onChange={e => setNewPaymentMethod(p => ({ ...p, [f.key]: e.target.value }))}
+                          onFocus={e => { e.target.style.borderColor = "rgba(139,92,246,0.6)"; e.target.style.boxShadow = "0 0 0 3px rgba(139,92,246,0.12)"; }}
+                          onBlur={e => { e.target.style.borderColor = "rgba(255,255,255,0.1)"; e.target.style.boxShadow = "none"; }} />
+                      </div>
+                    </React.Fragment>
+                  ))}
+                </>}
+
+                {["usdt", "ethereum", "bitcoin"].includes(newPaymentMethod.type) && (
+                  <div>
+                    <label style={S.label}>{newPaymentMethod.type === "usdt" ? "USDT" : newPaymentMethod.type === "ethereum" ? "Ethereum" : "Bitcoin"} Address</label>
+                    <input style={S.input} value={newPaymentMethod.address} placeholder={`Enter ${newPaymentMethod.type} address`}
+                      onChange={e => setNewPaymentMethod(p => ({ ...p, address: e.target.value }))}
+                      onFocus={e => { e.target.style.borderColor = "rgba(139,92,246,0.6)"; e.target.style.boxShadow = "0 0 0 3px rgba(139,92,246,0.12)"; }}
+                      onBlur={e => { e.target.style.borderColor = "rgba(255,255,255,0.1)"; e.target.style.boxShadow = "none"; }} />
+                    <p style={{ fontSize: "0.72rem", color: "#7070a0", marginTop: "6px" }}>Use the correct network. <span style={{ color: "#fbbf24" }}>This address must match your account verification.</span></p>
+                  </div>
+                )}
+
+                <div style={{ display: "flex", gap: "10px", marginTop: "8px" }}>
+                  <button style={{ ...S.btnSecondary, flex: 1, justifyContent: "center" }} onClick={() => setShowAddPaymentModal(false)}>Cancel</button>
+                  <button style={{ ...S.btnPrimary, flex: 1, justifyContent: "center" }} onClick={handleAddPaymentMethod}>
+                    {editingPayment ? "Update" : "Add"} Method
+                  </button>
+                </div>
               </div>
-            </div>
-          </div>
-        </div>
-      )}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
