@@ -15,16 +15,15 @@ const VerificationBadge: React.FC<VerificationBadgeProps> = ({
   showText = true,
   className = "",
   res = "px-3",
-  
 }) => {
   const getStatusConfig = () => {
     switch (status) {
       case "verified":
         return {
           icon: CheckCircle,
-          bgColor: "bg-green-100",
-          textColor: "text-green-800",
-          iconColor: "text-green-600",
+          bgColor: "bg-inherit",
+          textColor: "text-green-500",
+          iconColor: "text-green-500",
           text: "Verified",
         };
       case "pending":
@@ -105,7 +104,7 @@ const VerificationBadge: React.FC<VerificationBadgeProps> = ({
 
   return (
     <div
-      className={`inline-flex items-center rounded-full  ${res} border ${config.bgColor} ${config.textColor} ${sizeClasses.container} ${className}`}
+      className={`inline-flex items-center rounded-full  ${res}  ${config.bgColor} ${config.textColor} ${sizeClasses.container} ${className}`}
     >
       <Icon
         className={`${config.iconColor} ${sizeClasses.icon} ${

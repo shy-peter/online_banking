@@ -116,12 +116,12 @@ export const chatService = {
   },
 
   async subscribeToMessages(sessionId: string, callback: (message: ChatMessage) => void) {
-    // Subscribe to changes in the chat_messages collection
+    // Subscribe to changes in the chat_messages collection for this specific session
     return client.subscribe(
       `databases.${DATABASE_ID}.collections.${CHAT_MESSAGES}.documents`,
       (response: any) => {
-        // Only process new document creation events
-        if (response.events.includes('databases.*.collections.*.documents.*.create')) {
+        // Handle document creation events
+        if (response.events.some((event: string) => event.includes('create'))) {
           const payload = response.payload as {
             $id: string;
             sessionId: string;
@@ -134,15 +134,15 @@ export const chatService = {
             timestamp: string;
           };
 
-          // Only process messages for the current session
-          if (payload.sessionId === sessionId) {
+          // Ensure payload has required fields and matches the session
+          if (payload && payload.$id && payload.sessionId === sessionId && payload.message && payload.type && payload.timestamp) {
             const message: ChatMessage = {
               $id: payload.$id,
               message: payload.message,
               userId: payload.userId,
               email: payload.email,
               phone: payload.phone,
-              status: payload.status,
+              status: payload.status || 'sent',
               type: payload.type,
               sessionId: payload.sessionId,
               timestamp: payload.timestamp

@@ -24,6 +24,7 @@ const TransferModal: React.FC<TransferModalProps> = ({ isOpen, onClose }) => {
     accountNumber: string;
   } | null>(null);
   const [isValidatingRecipient, setIsValidatingRecipient] = useState(false);
+  const [showTransferPhraseWarning, setShowTransferPhraseWarning] = useState(false);
 
   // Calculate available balance the same way as dashboard (from transactions)
   const totalEarnings = transactions
@@ -99,6 +100,12 @@ const TransferModal: React.FC<TransferModalProps> = ({ isOpen, onClose }) => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Check if user has set transfer phrase first
+    if (!userProfile?.secretPhrase) {
+      setShowTransferPhraseWarning(true);
+      return;
+    }
+    
     if (!validateForm()) return;
 
     setIsSubmitting(true);
@@ -134,6 +141,7 @@ const TransferModal: React.FC<TransferModalProps> = ({ isOpen, onClose }) => {
     });
     setRecipientInfo(null);
     setErrors({});
+    setShowTransferPhraseWarning(false);
     onClose();
   };
 
@@ -179,6 +187,31 @@ const TransferModal: React.FC<TransferModalProps> = ({ isOpen, onClose }) => {
               </div>
             </div>
           </div>
+
+          {/* Transfer Phrase Warning */}
+          {showTransferPhraseWarning && !userProfile?.secretPhrase && (
+            <div className="p-6 bg-yellow-50 border-b border-yellow-200">
+              <div className="flex items-start space-x-3">
+                <AlertCircle className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" />
+                <div>
+                  <h3 className="text-sm font-semibold text-yellow-800 mb-1">Transfer Phrase Required</h3>
+                  <p className="text-sm text-yellow-700 mb-3">
+                    You need to set up a transfer phrase before you can transfer funds. Please go to your profile settings to set it up.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      handleClose();
+                      window.location.href = '/profile';
+                    }}
+                    className="text-sm font-medium text-yellow-600 hover:text-yellow-700 underline"
+                  >
+                    Go to Profile Settings
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="p-6 space-y-6">

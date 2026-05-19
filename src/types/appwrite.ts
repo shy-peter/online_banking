@@ -257,6 +257,7 @@ export interface AuthContextType {
     };
   }) => Promise<{ success: boolean; error?: string }>;
   updateUser: (userId: string, updates: any) => Promise<{ success: boolean; error?: string }>;
+  updateUserVerificationStatus: (userProfileId: string, isVerified: boolean) => Promise<{ success: boolean; error?: string }>;
   changePassword: (currentPassword: string, newPassword: string) => Promise<{ success: boolean; error?: string }>;
   getLoginHistory: () => Promise<LoginSession[]>;
   terminateSession: (sessionId: string) => Promise<{ success: boolean; error?: string }>;

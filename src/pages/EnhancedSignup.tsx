@@ -19,7 +19,6 @@ import {
   EyeOff
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import SecretPhraseModal from '../components/SecretPhraseModal';
 import LoadingSpinner from '../components/LoadingSpinner';
 
 interface SignupData {
@@ -41,9 +40,6 @@ interface SignupData {
   occupation: string;
   annualIncome: string;
   ssn: string; // For US users
-  
-  // Secret Phrase
-  secretPhrase: string;
 }
 
 const EnhancedSignup = () => {
@@ -53,7 +49,6 @@ const EnhancedSignup = () => {
   const [currentStep, setCurrentStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
-  const [showSecretPhraseModal, setShowSecretPhraseModal] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [errors] = useState<Record<string, string>>({});
@@ -73,15 +68,12 @@ const EnhancedSignup = () => {
     country: '',
     occupation: '',
     annualIncome: '',
-    ssn: '',
-    secretPhrase: ''
+    ssn: ''
   });
 
   const steps = [
     { id: 1, title: 'Basic Information', description: 'Your account details' },
-    { id: 2, title: 'Personal Information', description: 'Additional details' },
-    { id: 3, title: 'Documents', description: 'Upload required documents' },
-    { id: 4, title: 'Security Setup', description: 'Set up your secret phrase' }
+    { id: 2, title: 'Personal Information', description: 'Additional details' }
   ];
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -97,14 +89,6 @@ const EnhancedSignup = () => {
     }
   };
 
-
-  const handleSecretPhraseConfirm = async (phrase: string): Promise<boolean> => {
-    setFormData(prev => ({
-      ...prev,
-      secretPhrase: phrase
-    }));
-    return true;
-  };
 
   const validateStep = (step: number): boolean => {
     switch (step) {
@@ -137,15 +121,6 @@ const EnhancedSignup = () => {
           return false;
         }
         break;
-      case 3:
-        // Documents step - optional, just continue
-        break;
-      case 4:
-        if (!formData.secretPhrase) {
-          setError('Please set up your secret phrase');
-          return false;
-        }
-        break;
     }
     setError('');
     return true;
@@ -153,11 +128,7 @@ const EnhancedSignup = () => {
 
   const handleNext = () => {
     if (validateStep(currentStep)) {
-      if (currentStep === 4) {
-        setShowSecretPhraseModal(true);
-      } else {
-        setCurrentStep(prev => prev + 1);
-      }
+      setCurrentStep(prev => prev + 1);
     }
   };
 
@@ -171,7 +142,7 @@ const EnhancedSignup = () => {
       e.preventDefault();
     }
     
-    if (!validateStep(4)) return;
+    if (!validateStep(2)) return;
     
     setIsLoading(true);
     setError('');
@@ -183,7 +154,6 @@ const EnhancedSignup = () => {
         `${formData.firstName} ${formData.lastName}`,
         {
           phone: formData.phone,
-          secretPhrase: formData.secretPhrase,
           personalInfo: {
             firstName: formData.firstName,
             lastName: formData.lastName,
@@ -201,7 +171,8 @@ const EnhancedSignup = () => {
       );
       
       if (result.success) {
-        navigate(`/registration-complete?email=${encodeURIComponent(formData.email)}`);
+        // User is automatically logged in, redirect to dashboard
+        navigate('/dashboard');
       } else {
         setError(result.error || 'Signup failed. Please check your information and try again.');
       }
@@ -566,80 +537,7 @@ const EnhancedSignup = () => {
         );
 
       case 3:
-        return (
-          <div className="space-y-6">
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <div className="flex items-start space-x-3">
-                <AlertCircle className="w-5 h-5 text-blue-600 mt-0.5" />
-                <div>
-                  <h4 className="text-sm font-medium text-blue-800">Document Upload</h4>
-                  <p className="text-sm text-blue-700 mt-1">
-                    Please upload required documents to verify your identity. This helps us comply with regulations and keep your account secure.
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="text-center py-8">
-              <div className="w-16 h-16 bg-primary-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <AlertCircle className="w-8 h-8 text-primary-600" />
-              </div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">Documents Optional</h3>
-              <p className="text-gray-600 mb-6">
-                You can upload documents now or skip and complete this step later in your profile.
-              </p>
-            </div>
-          </div>
-        );
-
-      case 4:
-        return (
-          <div className="space-y-6">
-            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-              <div className="flex items-start space-x-3">
-                <AlertCircle className="w-5 h-5 text-yellow-600 mt-0.5" />
-                <div>
-                  <h4 className="text-sm font-medium text-yellow-800">Security Setup Required</h4>
-                  <p className="text-sm text-yellow-700 mt-1">
-                    You need to set up a 6-digit secret phrase that will be used to verify your identity 
-                    when changing your password. This phrase will be generated for you and must be saved securely.
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="text-center py-8">
-              <div className="w-16 h-16 bg-primary-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Lock className="w-8 h-8 text-primary-600" />
-              </div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">Set Up Secret Phrase</h3>
-              <p className="text-gray-600 mb-6">
-                Click the button below to generate and confirm your secret phrase
-              </p>
-              <button
-                onClick={() => setShowSecretPhraseModal(true)}
-                className="btn-primary px-6 py-3"
-              >
-                <Lock className="w-4 h-4 mr-2" />
-                Set Up Secret Phrase
-              </button>
-            </div>
-
-            {formData.secretPhrase && (
-              <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                <div className="flex items-center space-x-3">
-                  <Check className="w-5 h-5 text-green-600" />
-                  <div>
-                    <h4 className="text-sm font-medium text-green-800">Secret Phrase Set</h4>
-                    <p className="text-sm text-green-700 mt-1">
-                      Your secret phrase has been successfully set up and saved securely.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-        );
+        return null;
 
       default:
         return null;
@@ -686,24 +584,10 @@ const EnhancedSignup = () => {
             }`}>
               2
             </div>
-            <div className={`h-1 w-16 rounded ${currentStep >= 3 ? 'bg-[#d8ed36]' : 'bg-gray-700'}`} />
-            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold ${
-              currentStep >= 3 ? 'bg-[#d8ed36] text-black' : 'bg-gray-700 text-gray-400'
-            }`}>
-              3
-            </div>
-            <div className={`h-1 w-16 rounded ${currentStep >= 4 ? 'bg-[#d8ed36]' : 'bg-gray-700'}`} />
-            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold ${
-              currentStep >= 4 ? 'bg-[#d8ed36] text-black' : 'bg-gray-700 text-gray-400'
-            }`}>
-              4
-            </div>
           </div>
           <div className="flex justify-center space-x-8 text-xs text-gray-300">
             <span>Basic Info</span>
             <span>Personal Info</span>
-            <span>Documents</span>
-            <span>Security</span>
           </div>
         </motion.div>
 
@@ -753,7 +637,7 @@ const EnhancedSignup = () => {
               Previous
             </button>
 
-            {currentStep < 4 ? (
+            {currentStep < 2 ? (
               <button
                 type="button"
                 onClick={handleNext}
@@ -767,7 +651,7 @@ const EnhancedSignup = () => {
               <button
                 type="button"
                 onClick={handleSubmit}
-                disabled={isLoading || !formData.secretPhrase}
+                disabled={isLoading}
                 className="btn-primary w-full py-3 text-lg font-semibold disabled:opacity-50"
               >
                 {isLoading ? (
@@ -804,16 +688,6 @@ const EnhancedSignup = () => {
           </p>
         </motion.div>
       </div>
-
-      {/* Secret Phrase Modal */}
-      <SecretPhraseModal
-        isOpen={showSecretPhraseModal}
-        onClose={() => setShowSecretPhraseModal(false)}
-        onConfirm={handleSecretPhraseConfirm}
-        mode="setup"
-        title="Set Up Secret Phrase"
-        description="A 6-digit secret phrase will be generated for you. Please confirm it to complete your security setup."
-      />
     </div>
   );
 };

@@ -580,24 +580,16 @@ const Profile = () => {
                             size="xs"
                           />
                         ) : (
-                          "Pending Verification"
+                          <span className="text-amber-400 font-medium">Unverified (Pending)</span>
                         )}
                       </span>
                     </div>
-                    {!userProfile?.isVerified && (
-                      <button
-                        onClick={handleResendVerificationEmail}
-                        disabled={isResendingEmail}
-                        className="text-primary-600 hover:text-primary-700 text-sm disabled:opacity-50"
-                      >
-                        {isResendingEmail ? "Sending..." : "Resend Email"}
-                      </button>
-                    )}
                   </div>
                   {!userProfile?.isVerified && (
-                    <p className="text-xs text-gray-500 mt-1">
-                      Please check your email and click the verification link to
-                      activate your account.
+                    <p className="text-xs text-amber-500 mt-1">
+                      Your account is pending verification. You can log in and use the platform, 
+                      but withdrawal of funds is restricted until your account is verified. 
+                      Please contact support if you need assistance.
                     </p>
                   )}
                 </div>

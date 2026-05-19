@@ -365,6 +365,18 @@ const UserDetailsModal: React.FC<UserDetailsModalProps> = ({
                         {getStatusIcon(user.status)}
                         <span className="ml-1 capitalize">{user.status}</span>
                       </span>
+                      <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                        user.isVerified 
+                          ? 'bg-green-100 text-green-800' 
+                          : 'bg-amber-100 text-amber-800'
+                      }`}>
+                        {user.isVerified ? (
+                          <CheckCircle className="w-3 h-3" />
+                        ) : (
+                          <AlertCircle className="w-3 h-3" />
+                        )}
+                        <span className="ml-1">{user.isVerified ? 'Verified' : 'Unverified'}</span>
+                      </span>
                       <span className="text-xs text-gray-500">Account #{user.accountNumber}</span>
                       {totalPendingItems > 0 && (
                         <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-800">
@@ -490,6 +502,30 @@ const UserDetailsModal: React.FC<UserDetailsModalProps> = ({
                           <span className="text-sm text-gray-600">Member Since</span>
                         </div>
                         <span className="text-sm text-gray-900">{joinDate}</span>
+                      </div>
+
+                      <div className="flex items-center justify-between py-2 border-b border-gray-200">
+                        <div className="flex items-center space-x-2">
+                          <Shield className="w-4 h-4 text-gray-400" />
+                          <span className="text-sm text-gray-600">Verification Status</span>
+                        </div>
+                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
+                          user.isVerified 
+                            ? 'bg-green-100 text-green-800' 
+                            : 'bg-amber-100 text-amber-800'
+                        }`}>
+                          {user.isVerified ? (
+                            <>
+                              <CheckCircle className="w-3 h-3 mr-1" />
+                              Verified
+                            </>
+                          ) : (
+                            <>
+                              <AlertCircle className="w-3 h-3 mr-1" />
+                              Unverified (Pending)
+                            </>
+                          )}
+                        </span>
                       </div>
 
                       <div className="flex items-center justify-between py-2 border-b border-gray-200">
@@ -1150,6 +1186,60 @@ const UserDetailsModal: React.FC<UserDetailsModalProps> = ({
                           <span className="font-medium text-gray-900">Reactivate Account</span>
                           <span className="text-sm text-gray-600 text-center mt-1">
                             Restore inactive account and all services
+                          </span>
+                        </button>
+                      )}
+
+                      {/* Mark as Unverified */}
+                      {user.isVerified && (
+                        <button
+                          onClick={async () => {
+                            if (onUpdateUser && user) {
+                              setIsProcessing(true);
+                              try {
+                                const result = await onUpdateUser(user.$id, { isVerified: false, verificationStatus: 'pending' });
+                                if (result.success) {
+                                  // User data will be refreshed
+                                }
+                              } finally {
+                                setIsProcessing(false);
+                              }
+                            }
+                          }}
+                          disabled={isProcessing}
+                          className="flex flex-col items-center p-4 border border-orange-200 rounded-lg hover:bg-orange-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          <AlertCircle className="w-8 h-8 text-orange-600 mb-2" />
+                          <span className="font-medium text-gray-900">Mark Unverified</span>
+                          <span className="text-sm text-gray-600 text-center mt-1">
+                            User can login but cannot withdraw
+                          </span>
+                        </button>
+                      )}
+
+                      {/* Mark as Verified */}
+                      {!user.isVerified && (
+                        <button
+                          onClick={async () => {
+                            if (onUpdateUser && user) {
+                              setIsProcessing(true);
+                              try {
+                                const result = await onUpdateUser(user.$id, { isVerified: true, verificationStatus: 'verified' });
+                                if (result.success) {
+                                  // User data will be refreshed
+                                }
+                              } finally {
+                                setIsProcessing(false);
+                              }
+                            }
+                          }}
+                          disabled={isProcessing}
+                          className="flex flex-col items-center p-4 border border-green-200 rounded-lg hover:bg-green-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          <Check className="w-8 h-8 text-green-600 mb-2" />
+                          <span className="font-medium text-gray-900">Mark Verified</span>
+                          <span className="text-sm text-gray-600 text-center mt-1">
+                            Allow user to withdraw funds
                           </span>
                         </button>
                       )}

@@ -207,7 +207,8 @@ const Register = () => {
             setReferralError(referralError instanceof Error ? referralError.message : 'Failed to complete referral');
           }
         }
-        navigate('/verify-email');
+        // User is automatically logged in, redirect to dashboard
+        navigate('/dashboard');
       }
     } catch (error) {
       console.error('Registration error:', error);

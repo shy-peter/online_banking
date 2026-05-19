@@ -327,3 +327,170 @@ export const recalculateUserBalance = async (userId: string): Promise<{ success:
     return { success: false, error: error.message };
   }
 };
+
+// Admin function to adjust total earnings (creates earning transaction)
+export const adjustUserTotalEarnings = async (
+  userId: string,
+  amount: number,
+  type: 'increase' | 'decrease',
+  reason: string,
+  adminId?: string
+): Promise<{ success: boolean; error?: string }> => {
+  try {
+    const adjustmentAmount = type === 'increase' ? amount : -amount;
+
+    // Create earnings adjustment record
+    const adjustment = await databases.createDocument(
+      DATABASE_ID,
+      'earnings-adjustments',
+      ID.unique(),
+      {
+        userId: userId,
+        amount: adjustmentAmount,
+        type: type,
+        reason: reason,
+        adminId: adminId || 'system',
+        adjustmentType: 'total_earnings',
+        status: 'approved'
+      },
+      ['read("any")', 'write("any")']
+    );
+
+    // Create transaction record
+    await databases.createDocument(
+      DATABASE_ID,
+      COLLECTIONS.TRANSACTIONS,
+      ID.unique(),
+      {
+        userId: userId,
+        type: type === 'increase' ? 'earning' : 'withdrawal',
+        amount: Math.abs(adjustmentAmount),
+        description: `Admin ${type}: ${reason}`,
+        status: 'completed',
+        reference: `ADJ-EARN-${adjustment.$id.slice(-8)}`,
+        paymentMethod: 'admin'
+      },
+      ['read("any")', 'write("any")']
+    );
+
+    // Update user's balance (this will be recalculated from transactions)
+    await updateUserEarnings(userId, adjustmentAmount);
+
+    return { success: true };
+  } catch (error: any) {
+    console.error('Error adjusting total earnings:', error);
+    return { success: false, error: error.message };
+  }
+};
+
+// Admin function to adjust available balance directly (no transaction)
+export const adjustUserAvailableBalance = async (
+  userId: string,
+  amount: number,
+  type: 'increase' | 'decrease',
+  reason: string,
+  adminId?: string
+): Promise<{ success: boolean; error?: string }> => {
+  try {
+    const adjustmentAmount = type === 'increase' ? amount : -amount;
+
+    // Get user profile
+    const userResponse = await databases.listDocuments(
+      DATABASE_ID,
+      COLLECTIONS.USERS,
+      [Query.equal('userId', userId)]
+    );
+
+    if (userResponse.documents.length === 0) {
+      return { success: false, error: 'User not found' };
+    }
+
+    const userProfile = userResponse.documents[0];
+    const newAvailableBalance = Math.max(0, userProfile.availableBalance + adjustmentAmount);
+
+    // Create adjustment record
+    await databases.createDocument(
+      DATABASE_ID,
+      'earnings-adjustments',
+      ID.unique(),
+      {
+        userId: userId,
+        amount: adjustmentAmount,
+        type: type,
+        reason: reason,
+        adminId: adminId || 'system',
+        adjustmentType: 'available_balance',
+        status: 'approved'
+      },
+      ['read("any")', 'write("any")']
+    );
+
+    // Update only available balance (no transaction created)
+    await databases.updateDocument(
+      DATABASE_ID,
+      COLLECTIONS.USERS,
+      userProfile.$id,
+      {
+        availableBalance: newAvailableBalance,
+        updatedAt: new Date().toISOString()
+      }
+    );
+
+    return { success: true };
+  } catch (error: any) {
+    console.error('Error adjusting available balance:', error);
+    return { success: false, error: error.message };
+  }
+};
+
+// Admin function to adjust withdrawals (creates withdrawal transaction)
+export const adjustUserWithdrawals = async (
+  userId: string,
+  amount: number,
+  reason: string,
+  adminId?: string
+): Promise<{ success: boolean; error?: string }> => {
+  try {
+    // Create withdrawal adjustment record
+    const adjustment = await databases.createDocument(
+      DATABASE_ID,
+      'earnings-adjustments',
+      ID.unique(),
+      {
+        userId: userId,
+        amount: -Math.abs(amount),
+        type: 'decrease',
+        reason: reason,
+        adminId: adminId || 'system',
+        adjustmentType: 'withdrawal',
+        status: 'approved'
+      },
+      ['read("any")', 'write("any")']
+    );
+
+    // Create withdrawal transaction record
+    await databases.createDocument(
+      DATABASE_ID,
+      COLLECTIONS.TRANSACTIONS,
+      ID.unique(),
+      {
+        userId: userId,
+        type: 'withdrawal',
+        amount: Math.abs(amount),
+        description: `Admin Adjustment: ${reason}`,
+        status: 'completed',
+        reference: `ADJ-WITH-${adjustment.$id.slice(-8)}`,
+        paymentMethod: 'admin'
+      },
+      ['read("any")', 'write("any")']
+    );
+
+    // Update user's balance
+    await updateUserEarnings(userId, -Math.abs(amount));
+
+    return { success: true };
+  } catch (error: any) {
+    console.error('Error adjusting withdrawals:', error);
+    return { success: false, error: error.message };
+  }
+};

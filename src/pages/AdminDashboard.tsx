@@ -28,6 +28,10 @@ import { useAuth } from '../contexts/AuthContext';
 import { formatCurrency, COLLECTIONS, databases, DATABASE_ID } from '../lib/appwrite';
 import { 
   getEarningsAdjustments,
+  adjustUserTotalEarnings,
+  adjustUserAvailableBalance,
+  adjustUserWithdrawals,
+  recalculateUserBalance,
   type EarningsAdjustment 
 } from '../lib/earnings';
 import { ID, Query } from 'appwrite';
@@ -36,13 +40,14 @@ import type { BonusCode } from '../types/appwrite';
 import { chatService } from '../lib/chatService';
 
 const AdminDashboard = () => {
-  const { userProfile, investments, transactions, paymentMethods, updatePaymentMethod, simulateTransactionStatusChange, updateUser, approveInvestment, fixInvestmentOwnership } = useAuth();
+  const { userProfile, investments, transactions, paymentMethods, updatePaymentMethod, simulateTransactionStatusChange, updateUser, updateUserVerificationStatus, approveInvestment, fixInvestmentOwnership } = useAuth();
   const [isProcessing, setIsProcessing] = useState(false);
   const [adjustments, setAdjustments] = useState<EarningsAdjustment[]>([]);
   const [showAdjustmentModal, setShowAdjustmentModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState('');
   const [adjustmentAmount, setAdjustmentAmount] = useState('');
   const [adjustmentType, setAdjustmentType] = useState<'increase' | 'decrease'>('increase');
+  const [adjustmentCategory, setAdjustmentCategory] = useState<'total_earnings' | 'available_balance' | 'withdrawal'>('total_earnings');
   const [adjustmentReason, setAdjustmentReason] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [allUsers, setAllUsers] = useState<any[]>([]);
@@ -477,20 +482,50 @@ const AdminDashboard = () => {
     }
 
     try {
-      const result = await adjustUserEarnings(
-        selectedUser,
-        parseFloat(adjustmentAmount),
-        adjustmentType,
-        adjustmentReason
-      );
+      let result;
+      const userId = selectedUser;
+      const amount = parseFloat(adjustmentAmount);
+
+      if (adjustmentCategory === 'total_earnings') {
+        result = await adjustUserTotalEarnings(
+          userId,
+          amount,
+          adjustmentType,
+          adjustmentReason,
+          userProfile?.userId
+        );
+      } else if (adjustmentCategory === 'available_balance') {
+        result = await adjustUserAvailableBalance(
+          userId,
+          amount,
+          adjustmentType,
+          adjustmentReason,
+          userProfile?.userId
+        );
+      } else if (adjustmentCategory === 'withdrawal') {
+        result = await adjustUserWithdrawals(
+          userId,
+          amount,
+          adjustmentReason,
+          userProfile?.userId
+        );
+      }
 
       if (result.success) {
-        alert('Earnings adjusted successfully');
+        const categoryLabel = 
+          adjustmentCategory === 'total_earnings' ? 'Total Earnings' :
+          adjustmentCategory === 'available_balance' ? 'Available Balance' :
+          'Withdrawal';
+        alert(`${categoryLabel} adjusted successfully`);
         setShowAdjustmentModal(false);
         setSelectedUser('');
         setAdjustmentAmount('');
         setAdjustmentReason('');
+        setAdjustmentCategory('total_earnings');
+        setAdjustmentType('increase');
         fetchAdjustments();
+        // Recalculate user balance to ensure consistency
+        await recalculateUserBalance(userId);
       } else {
         alert(`Error: ${result.error}`);
       }
@@ -1883,7 +1918,9 @@ const AdminDashboard = () => {
           >
             <div className="p-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                {adjustmentType === 'increase' ? 'Add System Bonus' : 'Adjust User Earnings'}
+                {adjustmentCategory === 'total_earnings' && 'Adjust Total Earnings'}
+                {adjustmentCategory === 'available_balance' && 'Adjust Available Balance'}
+                {adjustmentCategory === 'withdrawal' && 'Record Withdrawal'}
               </h3>
               
               <div className="space-y-4">
@@ -1917,11 +1954,30 @@ const AdminDashboard = () => {
                 </div>
                 
                 <div>
+                  <label className="form-label">Adjustment Category</label>
+                  <select
+                    value={adjustmentCategory}
+                    onChange={(e) => setAdjustmentCategory(e.target.value as 'total_earnings' | 'available_balance' | 'withdrawal')}
+                    className="form-input"
+                  >
+                    <option value="total_earnings">Total Earnings</option>
+                    <option value="available_balance">Available Balance</option>
+                    <option value="withdrawal">Withdrawal</option>
+                  </select>
+                  <p className="text-xs text-gray-500 mt-1">
+                    {adjustmentCategory === 'total_earnings' && 'Adjust total earnings (creates transaction)'}
+                    {adjustmentCategory === 'available_balance' && 'Adjust available balance directly (no transaction)'}
+                    {adjustmentCategory === 'withdrawal' && 'Record a withdrawal (reduces available balance)'}
+                  </p>
+                </div>
+                
+                <div>
                   <label className="form-label">Type</label>
                   <select
                     value={adjustmentType}
                     onChange={(e) => setAdjustmentType(e.target.value as 'increase' | 'decrease')}
                     className="form-input"
+                    disabled={adjustmentCategory === 'withdrawal'}
                   >
                     <option value="increase">Increase</option>
                     <option value="decrease">Decrease</option>
@@ -1951,7 +2007,9 @@ const AdminDashboard = () => {
                   onClick={handleAdjustEarnings}
                   className="btn-primary flex-1"
                 >
-                  {adjustmentType === 'increase' ? 'Add Bonus' : 'Adjust Earnings'}
+                  {adjustmentCategory === 'total_earnings' && (adjustmentType === 'increase' ? 'Add Earnings' : 'Deduct Earnings')}
+                  {adjustmentCategory === 'available_balance' && (adjustmentType === 'increase' ? 'Increase Balance' : 'Decrease Balance')}
+                  {adjustmentCategory === 'withdrawal' && 'Record Withdrawal'}
                 </button>
               </div>
             </div>
