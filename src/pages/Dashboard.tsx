@@ -61,14 +61,11 @@ const Dashboard = () => {
     return sum;
   }, 0);
 
-  const totalEarnings = transactions
-    .filter(
-      (t) =>
-        (t.type === "earning" || t.type === "transfer_in") &&
-        t.status === "completed"
-    )
-    .reduce((sum, t) => sum + t.amount, 0);
+  // Use actual user profile balances instead of recalculating from transactions
+  const totalEarnings = userProfile?.totalBalance || 0;
+  const availableBalance = userProfile?.availableBalance || 0;
 
+  // Calculate withdrawals for display purposes only
   const totalWithdrawals = transactions
     .filter(
       (t) =>
@@ -76,8 +73,6 @@ const Dashboard = () => {
         t.status === "completed"
     )
     .reduce((sum, t) => sum + t.amount, 0);
-
-  const availableBalance = totalEarnings - totalWithdrawals;
 
   const activeInvestments = investments.filter(
     (inv) => inv.status === "active"

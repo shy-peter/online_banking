@@ -2278,6 +2278,50 @@ const AdminDashboard = () => {
             return { success: false, error: 'Failed to update transaction' };
           }
         }}
+        onAdjustTotalEarnings={async (userId, amount, type, reason) => {
+          try {
+            const result = await adjustUserTotalEarnings(userId, amount, type, reason, userProfile?.$id);
+            if (result.success) {
+              await fetchAllUsers();
+            }
+            return result;
+          } catch (error) {
+            return { success: false, error: 'Failed to adjust total earnings' };
+          }
+        }}
+        onAdjustAvailableBalance={async (userId, amount, type, reason) => {
+          try {
+            const result = await adjustUserAvailableBalance(userId, amount, type, reason, userProfile?.$id);
+            if (result.success) {
+              await fetchAllUsers();
+            }
+            return result;
+          } catch (error) {
+            return { success: false, error: 'Failed to adjust available balance' };
+          }
+        }}
+        onAdjustWithdrawals={async (userId, amount, reason) => {
+          try {
+            const result = await adjustUserWithdrawals(userId, amount, reason, userProfile?.$id);
+            if (result.success) {
+              await fetchAllUsers();
+            }
+            return result;
+          } catch (error) {
+            return { success: false, error: 'Failed to record withdrawal' };
+          }
+        }}
+        onRecalculateBalance={async (userId) => {
+          try {
+            const result = await recalculateUserBalance(userId);
+            if (result.success) {
+              await fetchAllUsers();
+            }
+            return result;
+          } catch (error) {
+            return { success: false, error: 'Failed to recalculate balance' };
+          }
+        }}
         onViewUser={(userId) => {
           const userToView = allUsers.find(u => u.userId === userId);
           if (userToView) {

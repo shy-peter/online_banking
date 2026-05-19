@@ -24,7 +24,7 @@ import TransferModal from '../components/TransferModal';
 import type { Investment } from '../types/appwrite';
 
 const Investments: React.FC = () => {
-  const { investments, transactions } = useAuth();
+  const { investments, transactions, userProfile } = useAuth();
   const navigate = useNavigate();
   const [showModal, setShowModal] = useState<boolean>(false);
   const [showWithdrawalModal, setShowWithdrawalModal] = useState<boolean>(false);
@@ -96,22 +96,25 @@ const Investments: React.FC = () => {
     setShowDailyReturns(true);
   };
 
-  const calculateEarnings = (investment: Investment): number => {
-    if (investment.status !== 'active') return 0;
-    const monthsActive = Math.floor((new Date().getTime() - new Date(investment.$createdAt).getTime()) / (1000 * 60 * 60 * 24 * 30));
-    return calculateMonthlyInterest(investment.amount, investment.interestRate) * monthsActive;
+  const calculateEarnings = (investment: Investment, transactionsList: typeof transactions): number => {
+    // Sum all completed earning transactions for this investment
+    return transactionsList
+      .filter(t => 
+        t.investmentId === investment.$id && 
+        t.type === 'earning' && 
+        t.status === 'completed'
+      )
+      .reduce((sum, t) => sum + t.amount, 0);
   };
 
   const totalInvested = investments.reduce((sum, inv) => sum + (inv.status === 'active' ? inv.amount : 0), 0);
-  const totalEarnings = transactions
-    .filter(t => t.type === 'earning' && t.status === 'completed')
-    .reduce((sum, t) => sum + t.amount, 0);
-  
+  const totalEarnings = userProfile?.totalBalance || 0;
+  const availableBalance = userProfile?.availableBalance || 0;
+
+  // Calculate withdrawals for display purposes only
   const totalWithdrawals = transactions
     .filter(t => t.type === 'withdrawal' && t.status === 'completed')
     .reduce((sum, t) => sum + t.amount, 0);
-  
-  const availableBalance = totalEarnings - totalWithdrawals;
   
   const activeInvestments = investments.filter(inv => inv.status === 'active').length;
   const monthlyIncome = investments.reduce((sum, inv) => {
@@ -318,7 +321,7 @@ const Investments: React.FC = () => {
           {filteredInvestments.length > 0 ? (
             <div className="divide-y divide-gray-200">
               {filteredInvestments.map((investment, index) => {
-                const earnings = calculateEarnings(investment);
+                const earnings = calculateEarnings(investment, transactions);
                 const plan = getInvestmentPlan(investment.amount);
                 
                 return (

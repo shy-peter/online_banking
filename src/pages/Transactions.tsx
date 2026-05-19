@@ -493,7 +493,7 @@ const Transactions = () => {
                   {filteredTransactions.length !== 1 ? "s" : ""} found
                 </p>
               </div>
-              <div className="card-body hidden p-0">
+              <div className="card-body p-0">
                 {filteredTransactions.length > 0 ? (
                   <div className="divide-y divide-gray-200">
                     {filteredTransactions.map((transaction, index) => (
@@ -825,8 +825,18 @@ const Transactions = () => {
               )
             : []
         }
-        paymentMethods={[]}
-        isAdmin={isAdmin}
+        paymentMethods={[]}        onAdjustTotalEarnings={async (_userId, _amount, _type, _reason) => {
+          return { success: true };
+        }}
+        onAdjustAvailableBalance={async (_userId, _amount, _type, _reason) => {
+          return { success: true };
+        }}
+        onAdjustWithdrawals={async (_userId, _amount, _reason) => {
+          return { success: true };
+        }}
+        onRecalculateBalance={async (_userId) => {
+          return { success: true };
+        }}        isAdmin={isAdmin}
       />
     </div>
   );

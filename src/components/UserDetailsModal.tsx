@@ -43,6 +43,10 @@ interface UserDetailsModalProps {
   paymentMethods?: PaymentMethod[];
   onUpdateUser?: (userId: string, updates: any) => Promise<{ success: boolean; error?: string }>;
   onAdjustEarnings?: (userId: string, amount: number, type: 'increase' | 'decrease', reason: string) => Promise<{ success: boolean; error?: string }>;
+  onAdjustTotalEarnings?: (userId: string, amount: number, type: 'increase' | 'decrease', reason: string, adminId?: string) => Promise<{ success: boolean; error?: string }>;
+  onAdjustAvailableBalance?: (userId: string, amount: number, type: 'increase' | 'decrease', reason: string, adminId?: string) => Promise<{ success: boolean; error?: string }>;
+  onAdjustWithdrawals?: (userId: string, amount: number, reason: string, adminId?: string) => Promise<{ success: boolean; error?: string }>;
+  onRecalculateBalance?: (userId: string) => Promise<{ success: boolean; error?: string }>;
   onUpdatePaymentMethod?: (paymentMethodId: string, updates: any) => Promise<{ success: boolean; error?: string }>;
   onUpdateTransaction?: (transactionId: string, updates: any) => Promise<{ success: boolean; error?: string }>;
   onViewUser?: (userId: string) => void;
@@ -60,6 +64,10 @@ const UserDetailsModal: React.FC<UserDetailsModalProps> = ({
   paymentMethods = [],
   onUpdateUser,
   onAdjustEarnings,
+  onAdjustTotalEarnings,
+  onAdjustAvailableBalance,
+  onAdjustWithdrawals,
+  onRecalculateBalance,
   onUpdatePaymentMethod,
   onUpdateTransaction,
   onViewUser,
@@ -72,6 +80,7 @@ const UserDetailsModal: React.FC<UserDetailsModalProps> = ({
   const [activeTab, setActiveTab] = React.useState<'overview' | 'pending' | 'adjustments' | 'account-actions'>('overview');
   const [adjustmentAmount, setAdjustmentAmount] = React.useState('');
   const [adjustmentType, setAdjustmentType] = React.useState<'increase' | 'decrease'>('increase');
+  const [adjustmentCategory, setAdjustmentCategory] = React.useState<'total_earnings' | 'available_balance' | 'withdrawal'>('total_earnings');
   const [adjustmentReason, setAdjustmentReason] = React.useState('');
   const [isProcessing, setIsProcessing] = React.useState(false);
   
@@ -90,20 +99,60 @@ const UserDetailsModal: React.FC<UserDetailsModalProps> = ({
 
 
   const handleAdjustEarnings = async () => {
-    if (!onAdjustEarnings || !adjustmentAmount || !adjustmentReason) return;
+    if (!adjustmentAmount || !adjustmentReason) return;
     
     setIsProcessing(true);
     try {
-      const result = await onAdjustEarnings(
-        user.userId, 
-        parseFloat(adjustmentAmount), 
-        adjustmentType, 
-        adjustmentReason
-      );
+      let result: any;
+      const amount = parseFloat(adjustmentAmount);
+
+      if (adjustmentCategory === 'total_earnings' && onAdjustTotalEarnings) {
+        result = await onAdjustTotalEarnings(
+          user.userId,
+          amount,
+          adjustmentType,
+          adjustmentReason
+        );
+      } else if (adjustmentCategory === 'available_balance' && onAdjustAvailableBalance) {
+        result = await onAdjustAvailableBalance(
+          user.userId,
+          amount,
+          adjustmentType,
+          adjustmentReason
+        );
+      } else if (adjustmentCategory === 'withdrawal' && onAdjustWithdrawals) {
+        result = await onAdjustWithdrawals(
+          user.userId,
+          amount,
+          adjustmentReason
+        );
+      } else {
+        // Fallback to old adjustment method
+        if (!onAdjustEarnings) return;
+        result = await onAdjustEarnings(
+          user.userId,
+          amount,
+          adjustmentType,
+          adjustmentReason
+        );
+      }
+
       if (result.success) {
+        // Recalculate balance for consistency
+        if (onRecalculateBalance) {
+          await onRecalculateBalance(user.userId);
+        }
+        
         setAdjustmentAmount('');
         setAdjustmentReason('');
-        // You could add a success notification here
+        setAdjustmentType('increase');
+        
+        const categoryLabel = 
+          adjustmentCategory === 'total_earnings' ? 'Total Earnings' :
+          adjustmentCategory === 'available_balance' ? 'Available Balance' :
+          'Withdrawal';
+        
+        alert(`${categoryLabel} adjusted successfully`);
       } else {
         alert(`Error: ${result.error}`);
       }
@@ -1037,18 +1086,44 @@ const UserDetailsModal: React.FC<UserDetailsModalProps> = ({
                       <Settings className="w-5 h-5 mr-2 text-gray-600" />
                       Adjust User Earnings
                     </h4>
+
+                    {/* Adjustment Category */}
+                    <div className="mb-4">
+                      <label className="form-label">Adjustment Category</label>
+                      <select
+                        value={adjustmentCategory}
+                        onChange={(e) => setAdjustmentCategory(e.target.value as 'total_earnings' | 'available_balance' | 'withdrawal')}
+                        className="form-input"
+                      >
+                        <option value="total_earnings">Total Earnings (with transaction record)</option>
+                        <option value="available_balance">Available Balance (direct adjustment)</option>
+                        <option value="withdrawal">Withdrawal (record withdrawal)</option>
+                      </select>
+                      <p className="text-xs text-gray-500 mt-1">
+                        {adjustmentCategory === 'total_earnings' && 'Creates an earning or withdrawal transaction'}
+                        {adjustmentCategory === 'available_balance' && 'Direct balance adjustment without transaction'}
+                        {adjustmentCategory === 'withdrawal' && 'Records a withdrawal transaction'}
+                      </p>
+                    </div>
+
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <label className="form-label">Adjustment Type</label>
-                        <select
-                          value={adjustmentType}
-                          onChange={(e) => setAdjustmentType(e.target.value as 'increase' | 'decrease')}
-                          className="form-input"
-                        >
-                          <option value="increase">Increase Earnings</option>
-                          <option value="decrease">Decrease Earnings</option>
-                        </select>
-                      </div>
+                      {adjustmentCategory !== 'withdrawal' && (
+                        <div>
+                          <label className="form-label">Adjustment Type</label>
+                          <select
+                            value={adjustmentType}
+                            onChange={(e) => setAdjustmentType(e.target.value as 'increase' | 'decrease')}
+                            className="form-input"
+                          >
+                            <option value="increase">
+                              {adjustmentCategory === 'total_earnings' ? 'Add Earnings' : 'Increase Balance'}
+                            </option>
+                            <option value="decrease">
+                              {adjustmentCategory === 'total_earnings' ? 'Deduct Earnings' : 'Decrease Balance'}
+                            </option>
+                          </select>
+                        </div>
+                      )}
                       <div>
                         <label className="form-label">Amount ($)</label>
                         <input
@@ -1078,12 +1153,20 @@ const UserDetailsModal: React.FC<UserDetailsModalProps> = ({
                         disabled={isProcessing || !adjustmentAmount || !adjustmentReason}
                         className="btn-primary px-4 py-2"
                       >
-                        {adjustmentType === 'increase' ? (
-                          <Plus className="w-4 h-4 mr-2" />
-                        ) : (
-                          <Minus className="w-4 h-4 mr-2" />
+                        {adjustmentCategory === 'total_earnings' && (
+                          adjustmentType === 'increase' ? 
+                          <><Plus className="w-4 h-4 mr-2" />Add Earnings</> : 
+                          <><Minus className="w-4 h-4 mr-2" />Deduct Earnings</>
                         )}
-                        {isProcessing ? 'Processing...' : `${adjustmentType === 'increase' ? 'Add' : 'Deduct'} Earnings`}
+                        {adjustmentCategory === 'available_balance' && (
+                          adjustmentType === 'increase' ? 
+                          <><Plus className="w-4 h-4 mr-2" />Increase Balance</> : 
+                          <><Minus className="w-4 h-4 mr-2" />Decrease Balance</>
+                        )}
+                        {adjustmentCategory === 'withdrawal' && (
+                          <><Minus className="w-4 h-4 mr-2" />Record Withdrawal</>
+                        )}
+                        {isProcessing && ' Processing...'}
                       </button>
                     </div>
                   </div>
@@ -1093,8 +1176,8 @@ const UserDetailsModal: React.FC<UserDetailsModalProps> = ({
                     <h4 className="text-lg font-semibold text-gray-900 mb-4">Current Balances</h4>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       <div className="text-center p-4 bg-blue-50 rounded-lg">
-                        <p className="text-sm text-gray-600">Total Balance</p>
-                        <p className="text-xl font-bold text-blue-600">{formatCurrency(user.totalBalance)}</p>
+                        <p className="text-sm text-gray-600">Total Investment</p>
+                        <p className="text-xl font-bold text-blue-600">{formatCurrency(totalInvestments)}</p>
                       </div>
                       <div className="text-center p-4 bg-green-50 rounded-lg">
                         <p className="text-sm text-gray-600">Available Balance</p>

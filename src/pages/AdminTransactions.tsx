@@ -624,6 +624,18 @@ const AdminTransactions = () => {
             return { success: false, error: 'Failed to update transaction' };
           }
         }}
+        onAdjustTotalEarnings={async (_userId, _amount, _type, _reason) => {
+          return { success: true };
+        }}
+        onAdjustAvailableBalance={async (_userId, _amount, _type, _reason) => {
+          return { success: true };
+        }}
+        onAdjustWithdrawals={async (_userId, _amount, _reason) => {
+          return { success: true };
+        }}
+        onRecalculateBalance={async (_userId) => {
+          return { success: true };
+        }}
         isAdmin={isAdmin}
       />
     </div>

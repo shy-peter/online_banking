@@ -350,7 +350,6 @@ export const adjustUserTotalEarnings = async (
         type: type,
         reason: reason,
         adminId: adminId || 'system',
-        adjustmentType: 'total_earnings',
         status: 'approved'
       },
       ['read("any")', 'write("any")']
@@ -419,7 +418,6 @@ export const adjustUserAvailableBalance = async (
         type: type,
         reason: reason,
         adminId: adminId || 'system',
-        adjustmentType: 'available_balance',
         status: 'approved'
       },
       ['read("any")', 'write("any")']
@@ -462,7 +460,6 @@ export const adjustUserWithdrawals = async (
         type: 'decrease',
         reason: reason,
         adminId: adminId || 'system',
-        adjustmentType: 'withdrawal',
         status: 'approved'
       },
       ['read("any")', 'write("any")']

@@ -171,11 +171,57 @@ const TransactionAnalytics: React.FC<TransactionAnalyticsProps> = ({ transaction
         <div className="bg-white p-4 rounded-lg border border-gray-200">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Total Amount</p>
-              <p className="text-2xl font-bold text-gray-900">{formatCurrency(totalAmount)}</p>
+              <p className="text-sm font-medium text-gray-600">Total Earnings</p>
+              <p className="text-2xl font-bold text-green-600">{formatCurrency(totalEarnings)}</p>
+              <p className="text-xs text-gray-500 mt-1">From all sources</p>
             </div>
             <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
-              <DollarSign className="w-5 h-5 text-green-600" />
+              <TrendingUp className="w-5 h-5 text-green-600" />
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white p-4 rounded-lg border border-gray-200">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-600">Total Investments</p>
+              <p className="text-2xl font-bold text-blue-600">{formatCurrency(totalInvestments)}</p>
+              <p className="text-xs text-gray-500 mt-1">Amount invested</p>
+            </div>
+            <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+              <TrendingUp className="w-5 h-5 text-blue-600" />
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white p-4 rounded-lg border border-gray-200">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-600">Total Withdrawals</p>
+              <p className="text-2xl font-bold text-red-600">{formatCurrency(totalWithdrawals)}</p>
+              <p className="text-xs text-gray-500 mt-1">Amount withdrawn</p>
+            </div>
+            <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
+              <TrendingDown className="w-5 h-5 text-red-600" />
+            </div>
+          </div>
+        </div>
+      </motion.div>
+
+      {/* Transaction Status Metrics */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="grid grid-cols-1 md:grid-cols-3 gap-4"
+      >
+        <div className="bg-white p-4 rounded-lg border border-gray-200">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-600">Completed</p>
+              <p className="text-2xl font-bold text-green-600">{completedTransactions}</p>
+            </div>
+            <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+              <CheckCircle className="w-5 h-5 text-green-600" />
             </div>
           </div>
         </div>
@@ -195,13 +241,11 @@ const TransactionAnalytics: React.FC<TransactionAnalyticsProps> = ({ transaction
         <div className="bg-white p-4 rounded-lg border border-gray-200">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Success Rate</p>
-              <p className="text-2xl font-bold text-green-600">
-                {totalTransactions > 0 ? Math.round((completedTransactions / totalTransactions) * 100) : 0}%
-              </p>
+              <p className="text-sm font-medium text-gray-600">Failed</p>
+              <p className="text-2xl font-bold text-red-600">{failedTransactions}</p>
             </div>
-            <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
-              <CheckCircle className="w-5 h-5 text-green-600" />
+            <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
+              <XCircle className="w-5 h-5 text-red-600" />
             </div>
           </div>
         </div>
